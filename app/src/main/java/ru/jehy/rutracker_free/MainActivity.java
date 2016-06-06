@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         myWebView.getSettings().setJavaScriptEnabled(true);
         RelativeLayout layout = (RelativeLayout) findViewById(R.id.contentLayout);
         assert layout != null;
-        layout.addView(myWebView, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.FILL_PARENT, RelativeLayout.LayoutParams.FILL_PARENT));
+        layout.addView(myWebView, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
 
         if (Build.VERSION.SDK_INT >= 21) {
             MyWebViewClient webClient = new MyWebViewClient(this);
