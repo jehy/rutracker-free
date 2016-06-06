@@ -1,4 +1,4 @@
-//        releaseVersionCode 7
+//        releaseVersionCode 8
 
 apply plugin: 'com.android.application'
 
@@ -9,8 +9,8 @@ android {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 14
         targetSdkVersion 23
-        versionName '0.7'
-        versionCode 7
+        versionName '0.8'
+        versionCode 8
     }
     buildTypes {
         release {
