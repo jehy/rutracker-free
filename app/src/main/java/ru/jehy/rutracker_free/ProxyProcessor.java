@@ -107,10 +107,14 @@ public class ProxyProcessor {
             return new WebResourceResponse("text/javascript", "UTF-8", null);
         }
 
-        if (url.getScheme().equals("https")) {
-            Log.d("WebView", "Not proxying url with HTTPS, it won't work on google proxy. Gonna fetch it directly.");
-            return null;
-        }
+        if (url.getScheme().equals("https"))
+            if (Utils.is_rutracker(url)) {
+                Log.d("WebView", "Trying to get rutracker page via http instead of https...");
+                url = Uri.parse(url.toString().replace("https://", "http://"));
+            } else {
+                Log.d("WebView", "Not proxying url with HTTPS, it won't work on google proxy. Gonna fetch it directly.");
+                return null;
+            }
         if (url.getHost().equals("google.com") || url.getHost().equals("www.google.com")) {
             Log.d("WebView", "Not trying to proxy google scripts");
             return null;
@@ -276,6 +280,7 @@ public class ProxyProcessor {
                     String replacement = "<form$1method=\"get\"$2><input type=\"hidden\" name=\"convert_post\" value=1>";
                     data = data.replaceAll(replace, replacement);
                     data = data.replace("</head>", "<link rel=\"stylesheet\" href=\"/custom.css\" type=\"text/css\"></head>");
+                    //data = data.replace("https://rutracker.org", "http://rutracker.org");
                     inputStr = new ByteArrayInputStream(data.getBytes(encoding));
                     Log.d("WebView", "data " + data);
                     String shareUrl = url.toString();
