@@ -3,8 +3,6 @@ package ru.jehy.rutracker_free;
 import android.net.Uri;
 import android.util.Log;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -60,17 +58,19 @@ public class Utils {
 
         String[] adv_paths = {"brand", "iframe"};
 
-        String host = url.getHost();
+        String host = url.getHost().toLowerCase();
         for (String item : adv_hosts) {
-            if (StringUtils.containsIgnoreCase(host, item)) {
+            //if (StringUtils.containsIgnoreCase(host, item))
+            if (host.contains(item.toLowerCase())) {
                 return true;
             }
         }
-        if (StringUtils.containsIgnoreCase(url.getHost(), "rutracker.org")) {
-            String path = url.getPath();
+        //if (StringUtils.containsIgnoreCase(url.getHost(), "rutracker.org")) {
+        if (host.contains("rutracker.org")) {
+            String path = url.getPath().toLowerCase();
             for (String item : adv_paths) {
                 {
-                    if (StringUtils.containsIgnoreCase(path, item)) {
+                    if (path.contains(item.toLowerCase())) {
                         return true;
                     }
                 }
@@ -89,7 +89,10 @@ public class Utils {
         String sid = (timestamp + authValue + timestamp);
 
         sid = Utils.md5(sid);
-        result[1] = "ps=" + timestamp + "-" + Integer.toString((int) (Math.random() * 1000000000)) + "-" + Integer.toString((int) (Math.random() * 1000000000)) + "-" + Integer.toString((int) (Math.random() * 1000000000)) + ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=win";
+        result[1] = "ps=" + timestamp + "-" + Integer.toString((int) (Math.random() * 1000000000)) +
+                "-" + Integer.toString((int) (Math.random() * 1000000000)) +
+                "-" + Integer.toString((int) (Math.random() * 1000000000)) +
+                ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=win";
         return result;
     }
 
@@ -118,7 +121,7 @@ public class Utils {
 
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         for (String param : params) {
             String name = param.split("=")[0];
             String value = param.split("=")[1];
@@ -160,7 +163,7 @@ public class Utils {
 
 
     public static boolean is_rutracker(Uri url) {
-        String host = url.getHost();
+        String host = url.getHost().toLowerCase();
         return ((host.equals("login.rutracker.org")
                 || host.equals("rutracker.org")
                 || host.equals("post.rutracker.org")
@@ -169,6 +172,6 @@ public class Utils {
     }
 
     public static boolean is_login_form(Uri url) {
-        return (is_rutracker(url) && url.getPath().contains("forum/login.php"));
+        return (is_rutracker(url) && url.getPath().toLowerCase().contains("forum/login.php"));
     }
 }
