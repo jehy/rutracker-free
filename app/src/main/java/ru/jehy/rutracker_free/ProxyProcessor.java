@@ -153,7 +153,7 @@ public class ProxyProcessor {
 
             //InetSocketAddress socksaddr = new InetSocketAddress("127.0.0.1", 9343);
             int port=onionProxyManager.getIPv4LocalHostSocksPort();
-            port=9343;
+            //port=9343;
             InetSocketAddress socksaddr = new InetSocketAddress("127.0.0.1", port);
             HttpClientContext context = HttpClientContext.create();
             context.setAttribute("socks.address", socksaddr);
