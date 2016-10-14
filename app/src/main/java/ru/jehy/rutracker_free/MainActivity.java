@@ -21,13 +21,18 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import com.msopentech.thali.android.toronionproxy.AndroidOnionProxyManager;
+import com.msopentech.thali.toronionproxy.OnionProxyManager;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
     public ShareActionProvider mShareActionProvider;
     private int ViewId;
+    public static OnionProxyManager onionProxyManager;
 
     public void Update(final Integer lastAppVersion) {
         runOnUiThread(new Runnable() {
@@ -99,6 +104,77 @@ public class MainActivity extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
+
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+        String fileStorageLocation = "torfiles";
+        onionProxyManager =
+                new AndroidOnionProxyManager(MainActivity.this.getApplicationContext(), fileStorageLocation);
+        int totalSecondsPerTorStartup = 4 * 60;
+        int totalTriesPerTorStartup = 5;
+
+// Start the Tor Onion Proxy
+        try {
+            if (!onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup)) {
+                Log.e("TorTest", "Couldn't start Tor!");
+                return;
+            }
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+        }
+
+// Start a hidden service listener
+        int hiddenServicePort = 80;
+        int localPort = 9343;
+        String onionAddress = null;
+        try {
+            onionAddress = onionProxyManager.publishHiddenService(hiddenServicePort, localPort);
+            Log.v("Rutracker Free","Port: "+onionProxyManager.getIPv4LocalHostSocksPort());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+                    Log.v("Rutracker free","Tor initialized");
+
+// It can taken anywhere from 30 seconds to a few minutes for Tor to start properly routing
+// requests to to a hidden service. So you generally want to try to test connect to it a
+// few times. But after the previous call the Tor Onion Proxy will route any requests
+// to the returned onionAddress and hiddenServicePort to 127.0.0.1:localPort. So, for example,
+// you could just pass localPort into the NanoHTTPD constructor and have a HTTP server listening
+// to that port.
+
+// Connect via the TOR network
+// In this case we are trying to connect to the hidden service but any IP/DNS address and port can be
+// used here.
+        //Socket clientSocket =
+                //Utilities.socks4aSocketConnection(onionAddress, hiddenServicePort, "127.0.0.1", localPort);
+
+// Now the socket is open but note that it can take some time before the Tor network has everything
+// connected and connection requests can fail for spurious reasons (especially when connecting to
+// hidden services) so have lots of retry logic.
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+        try {
+            Thread.sleep(5*1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
+            while (!onionProxyManager.isRunning()&&!onionProxyManager.isNetworkEnabled()) {
+                Thread.sleep(100);
+            }
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
         RunWebView();
     }
 
@@ -115,10 +191,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void RunWebView() {
-        MyWebView myWebView = new MyWebView(this.getApplicationContext());
+        MyWebView myWebView = new MyWebView(MainActivity.this.getApplicationContext());
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
             {
-                ViewId = this.generateViewId();
+                ViewId = MainActivity.this.generateViewId();
                 myWebView.setId(ViewId);
             }
 
@@ -133,10 +209,10 @@ public class MainActivity extends AppCompatActivity {
         layout.addView(myWebView, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
 
         if (Build.VERSION.SDK_INT >= 21) {
-            MyWebViewClient webClient = new MyWebViewClient(this);
+            MyWebViewClient webClient = new MyWebViewClient(MainActivity.this);
             myWebView.setWebViewClient(webClient);
         } else {
-            MyWebViewClientOld webClient = new MyWebViewClientOld(this);
+            MyWebViewClientOld webClient = new MyWebViewClientOld(MainActivity.this);
             myWebView.setWebViewClient(webClient);
         }
         WebSettings webSettings = myWebView.getSettings();
@@ -144,7 +220,8 @@ public class MainActivity extends AppCompatActivity {
         myWebView.getSettings().setBuiltInZoomControls(true);
         myWebView.getSettings().setDisplayZoomControls(false);
         CookieManager.getInstance().setAcceptCookie(true);
-        String url = "http://rutracker.org/forum/index.php";
+        String url = "https://rutracker.org/forum/index.php";
+        //String url = "http://myip.ru/";
         Log.d("Rutracker free", "Opening: " + url);
         myWebView.loadUrl(url);
     }
