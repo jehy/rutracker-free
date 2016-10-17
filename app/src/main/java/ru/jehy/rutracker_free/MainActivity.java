@@ -25,14 +25,14 @@ import com.msopentech.thali.android.toronionproxy.AndroidOnionProxyManager;
 import com.msopentech.thali.toronionproxy.OnionProxyManager;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
+
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
+    public static OnionProxyManager onionProxyManager;
     public ShareActionProvider mShareActionProvider;
     private int ViewId;
-    public static OnionProxyManager onionProxyManager;
 
     public void Update(final Integer lastAppVersion) {
         runOnUiThread(new Runnable() {
@@ -109,34 +109,34 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void run() {
-                try  {
-        String fileStorageLocation = "torfiles";
-        onionProxyManager =
-                new AndroidOnionProxyManager(MainActivity.this.getApplicationContext(), fileStorageLocation);
-        int totalSecondsPerTorStartup = 4 * 60;
-        int totalTriesPerTorStartup = 5;
+                try {
+                    String fileStorageLocation = "torfiles";
+                    onionProxyManager =
+                            new AndroidOnionProxyManager(MainActivity.this.getApplicationContext(), fileStorageLocation);
+                    int totalSecondsPerTorStartup = 4 * 60;
+                    int totalTriesPerTorStartup = 5;
 
 // Start the Tor Onion Proxy
-        try {
-            if (!onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup)) {
-                Log.e("TorTest", "Couldn't start Tor!");
-                return;
-            }
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
-        }
+                    try {
+                        if (!onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup)) {
+                            Log.e("TorTest", "Couldn't start Tor!");
+                            return;
+                        }
+                    } catch (InterruptedException | IOException e) {
+                        e.printStackTrace();
+                    }
 
 // Start a hidden service listener
-        int hiddenServicePort = 80;
-        int localPort = 9343;
-        String onionAddress = null;
-        try {
-            onionAddress = onionProxyManager.publishHiddenService(hiddenServicePort, localPort);
-            Log.v("Rutracker Free","Port: "+onionProxyManager.getIPv4LocalHostSocksPort());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-                    Log.v("Rutracker free","Tor initialized");
+                    //int hiddenServicePort = 80;
+                    //int localPort = 9343;
+                    //String onionAddress = null;
+                    try {
+                        //onionAddress = onionProxyManager.publishHiddenService(hiddenServicePort, localPort);
+                        Log.v("Rutracker Free", "Port: " + onionProxyManager.getIPv4LocalHostSocksPort());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    Log.v("Rutracker free", "Tor initialized");
 
 // It can taken anywhere from 30 seconds to a few minutes for Tor to start properly routing
 // requests to to a hidden service. So you generally want to try to test connect to it a
@@ -148,8 +148,8 @@ public class MainActivity extends AppCompatActivity {
 // Connect via the TOR network
 // In this case we are trying to connect to the hidden service but any IP/DNS address and port can be
 // used here.
-        //Socket clientSocket =
-                //Utilities.socks4aSocketConnection(onionAddress, hiddenServicePort, "127.0.0.1", localPort);
+                    //Socket clientSocket =
+                    //Utilities.socks4aSocketConnection(onionAddress, hiddenServicePort, "127.0.0.1", localPort);
 
 // Now the socket is open but note that it can take some time before the Tor network has everything
 // connected and connection requests can fail for spurious reasons (especially when connecting to
@@ -163,16 +163,10 @@ public class MainActivity extends AppCompatActivity {
 
         thread.start();
         try {
-            Thread.sleep(5*1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        try {
-            while (!onionProxyManager.isRunning()&&!onionProxyManager.isNetworkEnabled()) {
+            while (!onionProxyManager.isRunning() && !onionProxyManager.isNetworkEnabled()) {
                 Thread.sleep(100);
             }
-        }catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         RunWebView();

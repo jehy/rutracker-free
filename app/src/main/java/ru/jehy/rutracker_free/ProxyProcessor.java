@@ -14,14 +14,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.security.KeyStore;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import cz.msebera.android.httpclient.Header;
-import cz.msebera.android.httpclient.HttpHost;
 import cz.msebera.android.httpclient.HttpResponse;
-import cz.msebera.android.httpclient.HttpVersion;
 import cz.msebera.android.httpclient.client.HttpClient;
 import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
 import cz.msebera.android.httpclient.client.methods.HttpGet;
@@ -29,23 +26,9 @@ import cz.msebera.android.httpclient.client.methods.HttpPost;
 import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
 import cz.msebera.android.httpclient.config.Registry;
 import cz.msebera.android.httpclient.config.RegistryBuilder;
-import cz.msebera.android.httpclient.conn.ClientConnectionManager;
-import cz.msebera.android.httpclient.conn.params.ConnRoutePNames;
-import cz.msebera.android.httpclient.conn.scheme.PlainSocketFactory;
-import cz.msebera.android.httpclient.conn.scheme.Scheme;
-import cz.msebera.android.httpclient.conn.scheme.SchemeRegistry;
 import cz.msebera.android.httpclient.conn.socket.ConnectionSocketFactory;
-import cz.msebera.android.httpclient.conn.socket.PlainConnectionSocketFactory;
-import cz.msebera.android.httpclient.conn.ssl.SSLSocketFactory;
-import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
-import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
 import cz.msebera.android.httpclient.impl.client.HttpClients;
 import cz.msebera.android.httpclient.impl.conn.PoolingHttpClientConnectionManager;
-import cz.msebera.android.httpclient.impl.conn.tsccm.ThreadSafeClientConnManager;
-import cz.msebera.android.httpclient.params.BasicHttpParams;
-import cz.msebera.android.httpclient.params.HttpParams;
-import cz.msebera.android.httpclient.params.HttpProtocolParams;
-import cz.msebera.android.httpclient.protocol.HTTP;
 import cz.msebera.android.httpclient.ssl.SSLContexts;
 
 import static ru.jehy.rutracker_free.MainActivity.onionProxyManager;
@@ -69,22 +52,15 @@ public class ProxyProcessor {
 
 
     public HttpClient getNewHttpClient() {
-        try {
-            int port=onionProxyManager.getIPv4LocalHostSocksPort();
-            //HttpHost proxy=new HttpHost("127.0.0.1",port);
-            Registry<ConnectionSocketFactory> reg = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("http", new MyConnectionSocketFactory())
-                    .register("https", new MySSLConnectionSocketFactory(SSLContexts.createSystemDefault()))
-                    .build();
-            PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(reg);
-            CloseableHttpClient httpclient = HttpClients.custom()
-                    .setConnectionManager(cm)
-                    //.setProxy(proxy)
-                    .build();
-            return httpclient;
-        } catch (Exception e) {
-            return new DefaultHttpClient();
-        }
+
+        Registry<ConnectionSocketFactory> reg = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", new MyConnectionSocketFactory())
+                .register("https", new MySSLConnectionSocketFactory(SSLContexts.createSystemDefault()))
+                .build();
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(reg);
+        return HttpClients.custom()
+                .setConnectionManager(cm)
+                .build();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -98,13 +74,13 @@ public class ProxyProcessor {
         return this.process(url, "GET", view, null);
     }
 
-    public String makeError(Exception e,String url)
-    {
-        return "Что-то пошло не так при запросе страницы<br>"+url+":<br>Сообщение: " + e.getMessage() +
+    public String makeError(Exception e, String url) {
+        return "Что-то пошло не так при запросе страницы<br>" + url + ":<br>Сообщение: " + e.getMessage() +
                 "<br>Код: " +
                 "Вы можете <a href=\"javascript:location.reload(true)\">Обновить страницу</a>" +
                 "или <a href=\"http://rutracker.org/forum/index.php\">вернуться на главную</a>";
     }
+
     public WebResourceResponse process(Uri url, String method, WebView view, Map<String, String> headers) {
 
         Log.d("WebView", "Request for url: " + url + " intercepted");
@@ -118,15 +94,11 @@ public class ProxyProcessor {
             Log.d("WebView", "Not fetching advertisment");
             return new WebResourceResponse("text/javascript", "UTF-8", null);
         }
-/*
-        if (url.getScheme().equals("https"))
-            if (Utils.is_rutracker(url)) {
-                Log.d("WebView", "Trying to get rutracker page via http instead of https...");
-                url = Uri.parse(url.toString().replace("https://", "http://"));
-            } else {
-                Log.d("WebView", "Not proxying url with HTTPS, it won't work on google proxy. Gonna fetch it directly.");
-                return null;
-            }*/
+
+        if (!url.getHost().contains("rutracker")) {
+            Log.d("WebView", "Not trying to proxy data from other domains");
+            return null;
+        }
         if (url.getHost().equals("google.com") || url.getHost().equals("www.google.com")) {
             Log.d("WebView", "Not trying to proxy google scripts");
             return null;
@@ -134,8 +106,6 @@ public class ProxyProcessor {
         if (url.getPath().equals("/custom.css")) {
             Log.d("WebView", "Adding custom css file...");
 
-            // please try to test this
-            //return new WebResourceResponse("text/css", "UTF-8", null);
 
             try {
                 return new WebResourceResponse("text/css", "UTF-8", (MainContext).getAssets().open("rutracker.css"));
@@ -144,23 +114,12 @@ public class ProxyProcessor {
             }
         }
         try {
-            //String[] header = Utils.authHeader();
-            //Log.d("WebView", header[0] + " : " + header[1]);
-
-            //HttpHost proxy = new HttpHost("proxy.googlezip.net", 443, "https");
 
             HttpClient cli = getNewHttpClient();
-
-            //InetSocketAddress socksaddr = new InetSocketAddress("127.0.0.1", 9343);
-            int port=onionProxyManager.getIPv4LocalHostSocksPort();
-            //port=9343;
+            int port = onionProxyManager.getIPv4LocalHostSocksPort();
             InetSocketAddress socksaddr = new InetSocketAddress("127.0.0.1", port);
             HttpClientContext context = HttpClientContext.create();
             context.setAttribute("socks.address", socksaddr);
-           // HttpHost proxy = new HttpHost("127.0.0.1", port, "http");
-           // cli.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-
-            //cli.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
             HttpResponse response;
 
 
@@ -191,10 +150,10 @@ public class ProxyProcessor {
 
 
                 try {
-                    response = cli.execute(request1,context);
+                    response = cli.execute(request1, context);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    String msgText = makeError(e,url.toString());
+                    String msgText = makeError(e, url.toString());
                     ByteArrayInputStream msgStream = new ByteArrayInputStream(msgText.getBytes("UTF-8"));
                     return new WebResourceResponse("text/html", "UTF-8", msgStream);
                 }
@@ -204,7 +163,6 @@ public class ProxyProcessor {
                 for (Map.Entry<String, String> entry : headers.entrySet())
                     request1.setHeader(entry.getKey(), entry.getValue());
 
-                //request1.setHeader(header[0], header[1]);
                 request1.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
                 request1.setHeader("Accept-Encoding", "gzip, deflate, sdch");
                 request1.setHeader("Accept-Language", "ru,en-US;q=0.8,en;q=0.6");
@@ -216,10 +174,10 @@ public class ProxyProcessor {
                 request1.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36");
 
                 try {
-                    response = cli.execute(request1,context);
+                    response = cli.execute(request1, context);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    String msgText = makeError(e,url.toString());
+                    String msgText = makeError(e, url.toString());
                     ByteArrayInputStream msgStream = new ByteArrayInputStream(msgText.getBytes("UTF-8"));
                     return new WebResourceResponse("text/html", "UTF-8", msgStream);
                 }
@@ -300,7 +258,7 @@ public class ProxyProcessor {
                     data = data.replace("</head>", "<link rel=\"stylesheet\" href=\"/custom.css\" type=\"text/css\"></head>");
                     //data = data.replace("https://rutracker.org", "http://rutracker.org");
                     inputStr = new ByteArrayInputStream(data.getBytes(encoding));
-                    Log.d("WebView", "data " + data);
+                    //Log.d("WebView", "data " + data);
                     String shareUrl = url.toString();
                     int pos = shareUrl.indexOf("&login_username");
                     if (pos != -1)

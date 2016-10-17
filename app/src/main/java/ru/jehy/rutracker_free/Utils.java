@@ -54,7 +54,7 @@ public class Utils {
     public static boolean is_adv(Uri url) {
         String[] adv_hosts = {"marketgid.com", "adriver.ru", "thisclick.network", "hghit.com",
                 "onedmp.com", "acint.net", "yadro.ru", "tovarro.com", "marketgid.com", "rtb.com", "adx1.com",
-                "directadvert.ru", "rambler.ru"};
+                "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com"};
 
         String[] adv_paths = {"brand", "iframe"};
 
