@@ -243,6 +243,8 @@ public class ProxyProcessor {
                 Log.d("WebView", "clean mime: " + mime);
                 if (Rutracker.isRutracker(url) || url.toString().contains("static.t-ru.org"))
                     encoding = "windows-1251";//for rutracker only, for mimes other then html
+                if(Rutracker.isWiki(url))
+                    encoding = "utf-8";
 
                 Log.d("WebView", "encoding final: " + encoding);
 

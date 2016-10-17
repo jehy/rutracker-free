@@ -21,11 +21,16 @@ public class Rutracker {
         ));
     }
 
+    public static boolean isWiki(Uri url) {
+        String host = url.getHost().toLowerCase();
+        return host.equals("rutracker.wiki") || isRutracker(url)&&url.getPath().toLowerCase().startsWith("/go/");
+    }
+
 
     public static boolean isAdvertisment(Uri url) {
         String[] adv_hosts = {"marketgid.com", "adriver.ru", "thisclick.network", "hghit.com",
                 "onedmp.com", "acint.net", "yadro.ru", "tovarro.com", "marketgid.com", "rtb.com", "adx1.com",
-                "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com","mc.yandex.ru"};
+                "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com", "mc.yandex.ru"};
 
         String[] adv_paths = {"brand", "iframe"};
 
