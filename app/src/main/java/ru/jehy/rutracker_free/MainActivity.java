@@ -125,18 +125,7 @@ public class MainActivity extends AppCompatActivity {
                     } catch (InterruptedException | IOException e) {
                         e.printStackTrace();
                     }
-
-// Start a hidden service listener
-                    //int hiddenServicePort = 80;
-                    //int localPort = 9343;
-                    //String onionAddress = null;
-                    try {
-                        //onionAddress = onionProxyManager.publishHiddenService(hiddenServicePort, localPort);
-                        Log.v("Rutracker Free", "Port: " + onionProxyManager.getIPv4LocalHostSocksPort());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Log.v("Rutracker free", "Tor initialized");
+                    Log.v("Rutracker Free", "Tor initialized on port " + onionProxyManager.getIPv4LocalHostSocksPort());
 
 // It can taken anywhere from 30 seconds to a few minutes for Tor to start properly routing
 // requests to to a hidden service. So you generally want to try to test connect to it a

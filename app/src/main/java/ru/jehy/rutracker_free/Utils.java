@@ -51,35 +51,8 @@ public class Utils {
         return "";
     }
 
-    public static boolean is_adv(Uri url) {
-        String[] adv_hosts = {"marketgid.com", "adriver.ru", "thisclick.network", "hghit.com",
-                "onedmp.com", "acint.net", "yadro.ru", "tovarro.com", "marketgid.com", "rtb.com", "adx1.com",
-                "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com","mc.yandex.ru"};
 
-        String[] adv_paths = {"brand", "iframe"};
-
-        String host = url.getHost().toLowerCase();
-        for (String item : adv_hosts) {
-            //if (StringUtils.containsIgnoreCase(host, item))
-            if (host.contains(item.toLowerCase())) {
-                return true;
-            }
-        }
-        //if (StringUtils.containsIgnoreCase(url.getHost(), "rutracker.org")) {
-        if (host.contains("rutracker.org")) {
-            String path = url.getPath().toLowerCase();
-            for (String item : adv_paths) {
-                {
-                    if (path.contains(item.toLowerCase())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    public static String[] authHeader() {
+    /*public static String[] authHeader() {
         String[] result = new String[2];
         result[0] = "Chrome-Proxy";
         String authValue = "ac4500dd3b7579186c1b0620614fdb1f7d61f944";
@@ -94,7 +67,7 @@ public class Utils {
                 "-" + Integer.toString((int) (Math.random() * 1000000000)) +
                 ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=win";
         return result;
-    }
+    }*/
 
 
     static String convertStreamToString(java.io.InputStream is, String encoding) {
@@ -162,14 +135,5 @@ public class Utils {
     }
 
 
-    public static boolean is_rutracker(Uri url) {
-        String host = url.getHost().toLowerCase();
-        return ((host.equals("rutracker.org")
-                || host.endsWith(".rutracker.org")
-        ));
-    }
 
-    public static boolean is_login_form(Uri url) {
-        return (is_rutracker(url) && url.getPath().toLowerCase().contains("forum/login.php"));
-    }
 }

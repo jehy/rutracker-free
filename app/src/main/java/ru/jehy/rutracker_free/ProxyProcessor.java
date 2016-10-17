@@ -76,7 +76,7 @@ public class ProxyProcessor {
         return "Что-то пошло не так при запросе страницы<br>" + url + ":<br>Сообщение: " + e.getMessage() +
                 "<br>Код: " +
                 "Вы можете <a href=\"javascript:location.reload(true)\">Обновить страницу</a>" +
-                "или <a href=\"http://rutracker.org/forum/index.php\">вернуться на главную</a>";
+                "или <a href=\"" + Rutracker.mainUrl + "\">вернуться на главную</a>";
     }
 
     public WebResourceResponse process(Uri url, String method, WebView view, Map<String, String> headers) {
@@ -92,17 +92,13 @@ public class ProxyProcessor {
             url = Uri.parse(Rutracker.mainUrl);
         }
 
-        if (Utils.is_adv(url)) {
+        if (Rutracker.isAdvertisment(url)) {
             Log.d("WebView", "Not fetching advertisment");
             return new WebResourceResponse("text/javascript", "UTF-8", null);
         }
 
-        if (!url.getHost().contains("rutracker")) {
+        if (!Rutracker.isRutracker(url)) {
             Log.d("WebView", "Not trying to proxy data from other domains");
-            return null;
-        }
-        if (url.getHost().equals("google.com") || url.getHost().equals("www.google.com")) {
-            Log.d("WebView", "Not trying to proxy google scripts");
             return null;
         }
         if (url.getPath().equals("/custom.css")) {
@@ -114,7 +110,6 @@ public class ProxyProcessor {
             }
         }
         try {
-
             HttpClient cli = getNewHttpClient();
             int port = onionProxyManager.getIPv4LocalHostSocksPort();
             InetSocketAddress socksaddr = new InetSocketAddress("127.0.0.1", port);
@@ -142,8 +137,8 @@ public class ProxyProcessor {
                 request1.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
                 request1.setHeader("Accept-Encoding", "gzip, deflate, sdch");
                 request1.setHeader("Accept-Language", "ru,en-US;q=0.8,en;q=0.6");
-                String authCookie=CookieManager.get(MainContext);
-                if (authCookie != null && Utils.is_rutracker(url)) {
+                String authCookie = CookieManager.get(MainContext);
+                if (authCookie != null && Rutracker.isRutracker(url)) {
                     request1.setHeader("Cookie", authCookie);
                     Log.d("WebView", "cookie sent:" + authCookie);
                 }
@@ -168,8 +163,8 @@ public class ProxyProcessor {
                 request1.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
                 request1.setHeader("Accept-Encoding", "gzip, deflate, sdch");
                 request1.setHeader("Accept-Language", "ru,en-US;q=0.8,en;q=0.6");
-                String authCookie=CookieManager.get(MainContext);
-                if (authCookie != null && Utils.is_rutracker(url)) {
+                String authCookie = CookieManager.get(MainContext);
+                if (authCookie != null && Rutracker.isRutracker(url)) {
                     request1.setHeader("Cookie", authCookie);
                     Log.d("WebView", "cookie sent:" + authCookie);
                 }
@@ -187,7 +182,7 @@ public class ProxyProcessor {
 
             }
 
-            if (Utils.is_login_form(url)) {
+            if (Rutracker.isLoginForm(url)) {
 
                 Header[] all = response.getAllHeaders();
                 for (Header header1 : all) {
@@ -246,12 +241,12 @@ public class ProxyProcessor {
                     encoding = "UTF-8";
 
                 Log.d("WebView", "clean mime: " + mime);
-                if (Utils.is_rutracker(url) || url.toString().contains("static.t-ru.org"))
+                if (Rutracker.isRutracker(url) || url.toString().contains("static.t-ru.org"))
                     encoding = "windows-1251";//for rutracker only, for mimes other then html
 
                 Log.d("WebView", "encoding final: " + encoding);
 
-                if (mime.equals("text/html") && Utils.is_rutracker(url)) {
+                if (mime.equals("text/html") && Rutracker.isRutracker(url)) {
                     //conversions for rutacker
 
                     encoding = "windows-1251";//for rutracker only
@@ -300,7 +295,7 @@ public class ProxyProcessor {
                         "<br>Адрес: " + url.toString() + "<br>" +
                         "<br>Код: " + responseCode + "<br>" +
                         "Вы можете <a href=\"javascript:location.reload(true)\">Обновить страницу</a>" +
-                        "или <a href=\"http://rutracker.org/forum/index.php\">вернуться на главную</a>";
+                        "или <a href=\"" + Rutracker.mainUrl + "\">вернуться на главную</a>";
                 ByteArrayInputStream msgStream = new ByteArrayInputStream(msgText.getBytes("UTF-8"));
                 return new WebResourceResponse("text/html", "UTF-8", msgStream);
 
