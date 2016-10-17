@@ -285,6 +285,7 @@ public class ProxyProcessor {
                     mShareIntent.setType("text/plain");
                     mShareIntent.putExtra(Intent.EXTRA_TEXT, shareMsg);
                     ((MainActivity) MainContext).setShareIntent(mShareIntent);
+                    //((MainActivity) MainContext).invalidateOptionsMenu();
 
                 }
                 return new WebResourceResponse(mime, encoding, inputStr);

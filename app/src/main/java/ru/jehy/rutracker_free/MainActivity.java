@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.actionbar, menu);
         MenuItem item = menu.findItem(R.id.menu_item_share);
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        //this.invalidateOptionsMenu();
         return true;
     }
 
