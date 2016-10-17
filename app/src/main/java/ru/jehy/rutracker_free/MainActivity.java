@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
-    public static OnionProxyManager onionProxyManager;
+    public static OnionProxyManager onionProxyManager = null;
     public ShareActionProvider mShareActionProvider;
     private int ViewId;
 
@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
 
         thread.start();
         try {
-            while (!onionProxyManager.isRunning() && !onionProxyManager.isNetworkEnabled()) {
+            while (onionProxyManager == null || !onionProxyManager.isRunning() || !onionProxyManager.isNetworkEnabled()) {
                 Thread.sleep(100);
             }
         } catch (Exception e) {
