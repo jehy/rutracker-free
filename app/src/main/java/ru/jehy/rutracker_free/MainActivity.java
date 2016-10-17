@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(myToolbar);
 
 
-        Thread thread = new Thread(new Runnable() {
+        Thread threadTor = new Thread(new Runnable() {
 
             @Override
             public void run() {
@@ -134,12 +134,6 @@ public class MainActivity extends AppCompatActivity {
 // you could just pass localPort into the NanoHTTPD constructor and have a HTTP server listening
 // to that port.
 
-// Connect via the TOR network
-// In this case we are trying to connect to the hidden service but any IP/DNS address and port can be
-// used here.
-                    //Socket clientSocket =
-                    //Utilities.socks4aSocketConnection(onionAddress, hiddenServicePort, "127.0.0.1", localPort);
-
 // Now the socket is open but note that it can take some time before the Tor network has everything
 // connected and connection requests can fail for spurious reasons (especially when connecting to
 // hidden services) so have lots of retry logic.
@@ -150,15 +144,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        thread.start();
-        try {
-            while (onionProxyManager == null || !onionProxyManager.isRunning() || !onionProxyManager.isNetworkEnabled()) {
-                Thread.sleep(100);
+        threadTor.start();
+
+        Thread threadWebView = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                RunWebView();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        RunWebView();
+        );
+        threadWebView.run();
     }
 
     public void setShareIntent(final Intent shareIntent) {
@@ -174,6 +169,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void RunWebView() {
+
+        try {
+            while (onionProxyManager == null || !onionProxyManager.isRunning() || !onionProxyManager.isNetworkEnabled()) {
+                Thread.sleep(100);
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
         MyWebView myWebView = new MyWebView(MainActivity.this.getApplicationContext());
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
             {
