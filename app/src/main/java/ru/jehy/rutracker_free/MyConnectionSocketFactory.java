@@ -37,12 +37,8 @@ public class MyConnectionSocketFactory implements ConnectionSocketFactory {
             final HttpContext context) throws IOException, ConnectTimeoutException {
 
         InetSocketAddress socksaddr = (InetSocketAddress) context.getAttribute("socks.address");
-
-        //int localSocksProxyPort = params.getIntParameter(LOCAL_SOCKS_PROXY_PORT_PARAM_NAME, -1);
-
         socket = new Socket();
         connectTimeout = 100000;
-        //conn.opening(socket, target);
         socket.setSoTimeout(connectTimeout);
         socket.connect(new InetSocketAddress(socksaddr.getHostName(), socksaddr.getPort()), connectTimeout);
 

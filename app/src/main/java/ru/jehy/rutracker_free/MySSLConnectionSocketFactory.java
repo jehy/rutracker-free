@@ -28,9 +28,7 @@ public class MySSLConnectionSocketFactory extends SSLConnectionSocketFactory {
 
     @Override
     public Socket createSocket(final HttpContext context) throws IOException {
-        //InetSocketAddress socksaddr = (InetSocketAddress) context.getAttribute("socks.address");
-        //Proxy proxy = new Proxy(Proxy.Type.SOCKS, socksaddr);
-        return new Socket();//(proxy);
+        return new Socket();
     }
 
     @Override
@@ -44,16 +42,10 @@ public class MySSLConnectionSocketFactory extends SSLConnectionSocketFactory {
         Args.notNull(host, "HTTP host");
         Args.notNull(remoteAddress, "Remote address");
         InetSocketAddress socksaddr = (InetSocketAddress) context.getAttribute("socks.address");
-
-        //int localSocksProxyPort = params.getIntParameter(LOCAL_SOCKS_PROXY_PORT_PARAM_NAME, -1);
-
         socket = new Socket();
         connectTimeout = 100000;
-        //conn.opening(socket, target);
         socket.setSoTimeout(connectTimeout);
         socket.connect(new InetSocketAddress(socksaddr.getHostName(), socksaddr.getPort()), connectTimeout);
-
-
         DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
         outputStream.write((byte) 0x04);
         outputStream.write((byte) 0x01);
@@ -67,7 +59,7 @@ public class MySSLConnectionSocketFactory extends SSLConnectionSocketFactory {
         if (inputStream.readByte() != (byte) 0x00 || inputStream.readByte() != (byte) 0x5a) {
             throw new IOException("SOCKS4a connect failed");
         } else
-            Log.v("SSLConnectionSF", "SOCKS4a conenct ok!");
+            Log.v("SSLConnectionSF", "SOCKS4a connect ok!");
         inputStream.readShort();
         inputStream.readInt();
 

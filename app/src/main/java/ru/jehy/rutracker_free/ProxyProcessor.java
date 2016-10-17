@@ -43,11 +43,9 @@ import static ru.jehy.rutracker_free.MainActivity.onionProxyManager;
 public class ProxyProcessor {
 
     private final Context MainContext;
-    private String authCookie = null;
 
     public ProxyProcessor(Context c) {
         MainContext = c;
-        authCookie = CookieManager.get(MainContext);
     }
 
 
@@ -89,6 +87,10 @@ public class ProxyProcessor {
             Log.d("WebView", "No url or host provided, better let webview deal with it");
             return null;
         }
+        if (url.getPath().contains("logout.php")) {
+            CookieManager.clear(MainContext);
+            url = Uri.parse(Rutracker.mainUrl);
+        }
 
         if (Utils.is_adv(url)) {
             Log.d("WebView", "Not fetching advertisment");
@@ -105,8 +107,6 @@ public class ProxyProcessor {
         }
         if (url.getPath().equals("/custom.css")) {
             Log.d("WebView", "Adding custom css file...");
-
-
             try {
                 return new WebResourceResponse("text/css", "UTF-8", (MainContext).getAssets().open("rutracker.css"));
             } catch (IOException e) {
@@ -124,6 +124,7 @@ public class ProxyProcessor {
 
 
             if (url.toString().contains("convert_post=1") || method.equals("post")) {
+                //we need to emulate POST request
                 Log.d("WebView", "WebviewClient: it is a post request!");
                 String urlWithStrippedGet = url.toString();
                 int queryPart = urlWithStrippedGet.indexOf("?");
@@ -141,6 +142,7 @@ public class ProxyProcessor {
                 request1.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
                 request1.setHeader("Accept-Encoding", "gzip, deflate, sdch");
                 request1.setHeader("Accept-Language", "ru,en-US;q=0.8,en;q=0.6");
+                String authCookie=CookieManager.get(MainContext);
                 if (authCookie != null && Utils.is_rutracker(url)) {
                     request1.setHeader("Cookie", authCookie);
                     Log.d("WebView", "cookie sent:" + authCookie);
@@ -166,6 +168,7 @@ public class ProxyProcessor {
                 request1.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
                 request1.setHeader("Accept-Encoding", "gzip, deflate, sdch");
                 request1.setHeader("Accept-Language", "ru,en-US;q=0.8,en;q=0.6");
+                String authCookie=CookieManager.get(MainContext);
                 if (authCookie != null && Utils.is_rutracker(url)) {
                     request1.setHeader("Cookie", authCookie);
                     Log.d("WebView", "cookie sent:" + authCookie);
@@ -195,7 +198,7 @@ public class ProxyProcessor {
                 if (cookies.length > 0) {
                     String val = cookies[0].getValue();
                     val = val.substring(0, val.indexOf(";"));
-                    authCookie = val.trim();
+                    String authCookie = val.trim();
                     CookieManager.put(MainContext, authCookie);
                     Log.d("WebView", "=== Auth cookie: ==='" + val + "'");
                     Log.d("WebView", "redirecting to main page...");
@@ -249,14 +252,23 @@ public class ProxyProcessor {
                 Log.d("WebView", "encoding final: " + encoding);
 
                 if (mime.equals("text/html") && Utils.is_rutracker(url)) {
+                    //conversions for rutacker
+
                     encoding = "windows-1251";//for rutracker only
                     String data = Utils.convertStreamToString(inputStr, encoding);
-                    //data = data.replace("method=\"post\"", "method=\"get\"");
+
+                    //convert POST data to GET data to be able ro intercept it
                     String replace = "<form(.*?)method=\"post\"(.*?)>";
                     String replacement = "<form$1method=\"get\"$2><input type=\"hidden\" name=\"convert_post\" value=1>";
                     data = data.replaceAll(replace, replacement);
+
+                    //inject custom CSS
                     data = data.replace("</head>", "<link rel=\"stylesheet\" href=\"/custom.css\" type=\"text/css\"></head>");
-                    //data = data.replace("https://rutracker.org", "http://rutracker.org");
+
+                    //replace with custom logout
+                    data = data.replace("<a href=\"#\" onclick=\"return post2url('login.php', {logout: 1});\">Выход</a>",
+                            "<a href=\"logout.php\">Выход</a>");
+
                     inputStr = new ByteArrayInputStream(data.getBytes(encoding));
                     //Log.d("WebView", "data " + data);
                     String shareUrl = url.toString();

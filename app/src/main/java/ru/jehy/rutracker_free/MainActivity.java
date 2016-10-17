@@ -214,10 +214,10 @@ public class MainActivity extends AppCompatActivity {
         myWebView.getSettings().setBuiltInZoomControls(true);
         myWebView.getSettings().setDisplayZoomControls(false);
         CookieManager.getInstance().setAcceptCookie(true);
-        String url = "https://rutracker.org/forum/index.php";
+        //String url = "https://rutracker.org/forum/index.php";
         //String url = "http://myip.ru/";
-        Log.d("Rutracker free", "Opening: " + url);
-        myWebView.loadUrl(url);
+        Log.d("Rutracker free", "Opening: " + Rutracker.mainUrl);
+        myWebView.loadUrl(Rutracker.mainUrl);
     }
 
     @Override

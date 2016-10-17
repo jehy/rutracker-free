@@ -28,6 +28,16 @@ public class CookieManager {
             Log.d("TokenManager", "Got token " + access_token);
         return access_token;
     }
+    @SuppressLint("CommitPrefEdits")
+    static void clear(Context mContext)
+    {
+        SharedPreferences settings = PreferenceManager
+                .getDefaultSharedPreferences(mContext);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.remove(KEY);
+        editor.commit();
+        Log.d("TokenManager", "Cleared saved cookie");
+    }
 
     @SuppressLint("CommitPrefEdits")
     static void put(Context mContext, String token) {

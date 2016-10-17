@@ -54,7 +54,7 @@ public class Utils {
     public static boolean is_adv(Uri url) {
         String[] adv_hosts = {"marketgid.com", "adriver.ru", "thisclick.network", "hghit.com",
                 "onedmp.com", "acint.net", "yadro.ru", "tovarro.com", "marketgid.com", "rtb.com", "adx1.com",
-                "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com"};
+                "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com","mc.yandex.ru"};
 
         String[] adv_paths = {"brand", "iframe"};
 
@@ -164,10 +164,8 @@ public class Utils {
 
     public static boolean is_rutracker(Uri url) {
         String host = url.getHost().toLowerCase();
-        return ((host.equals("login.rutracker.org")
-                || host.equals("rutracker.org")
-                || host.equals("post.rutracker.org")
-                //|| host.equals("rutracker.wiki") //does not require auth and not 1251
+        return ((host.equals("rutracker.org")
+                || host.endsWith(".rutracker.org")
         ));
     }
 
