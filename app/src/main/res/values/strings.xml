@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">rutracker free</string>
     <string name="action_share">Share</string>
+    <string name="cancel" >Отмена</string>
+    <string name="update_available">Доступно обновление</string>
+    <string name="update">обновить</string>
 </resources>

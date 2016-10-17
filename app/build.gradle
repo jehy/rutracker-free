@@ -1,4 +1,4 @@
-//        releaseVersionCode 8
+//        releaseVersionCode 9
 buildscript {
     repositories {
         mavenCentral()
@@ -26,8 +26,8 @@ android {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 16
         targetSdkVersion 24
-        versionName '0.8'
-        versionCode 8
+        versionName '9.0.0'
+        versionCode 9
     }
     buildTypes {
         release {
