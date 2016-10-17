@@ -4,35 +4,28 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.webkit.CookieManager;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.widget.RelativeLayout;
 
-import com.msopentech.thali.android.toronionproxy.AndroidOnionProxyManager;
 import com.msopentech.thali.toronionproxy.OnionProxyManager;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
     public static OnionProxyManager onionProxyManager = null;
     public ShareActionProvider mShareActionProvider;
-    private int ViewId;
+    public int ViewId;
 
     public void Update(final Integer lastAppVersion) {
         runOnUiThread(new Runnable() {
@@ -99,61 +92,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        new TorPogressTask(MainActivity.this).execute();
         new Updater().execute(this);
         setContentView(R.layout.activity_main);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-
-
-        Thread threadTor = new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    String fileStorageLocation = "torfiles";
-                    onionProxyManager =
-                            new AndroidOnionProxyManager(MainActivity.this.getApplicationContext(), fileStorageLocation);
-                    int totalSecondsPerTorStartup = 4 * 60;
-                    int totalTriesPerTorStartup = 5;
-
-// Start the Tor Onion Proxy
-                    try {
-                        if (!onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup)) {
-                            Log.e("TorTest", "Couldn't start Tor!");
-                            return;
-                        }
-                    } catch (InterruptedException | IOException e) {
-                        e.printStackTrace();
-                    }
-                    Log.v("Rutracker Free", "Tor initialized on port " + onionProxyManager.getIPv4LocalHostSocksPort());
-
-// It can taken anywhere from 30 seconds to a few minutes for Tor to start properly routing
-// requests to to a hidden service. So you generally want to try to test connect to it a
-// few times. But after the previous call the Tor Onion Proxy will route any requests
-// to the returned onionAddress and hiddenServicePort to 127.0.0.1:localPort. So, for example,
-// you could just pass localPort into the NanoHTTPD constructor and have a HTTP server listening
-// to that port.
-
-// Now the socket is open but note that it can take some time before the Tor network has everything
-// connected and connection requests can fail for spurious reasons (especially when connecting to
-// hidden services) so have lots of retry logic.
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        threadTor.start();
-
-        Thread threadWebView = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                RunWebView();
-            }
-        }
-        );
-        threadWebView.run();
     }
 
     public void setShareIntent(final Intent shareIntent) {
@@ -168,49 +111,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void RunWebView() {
-
-        try {
-            while (onionProxyManager == null || !onionProxyManager.isRunning() || !onionProxyManager.isNetworkEnabled()) {
-                Thread.sleep(100);
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        MyWebView myWebView = new MyWebView(MainActivity.this.getApplicationContext());
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            {
-                ViewId = MainActivity.this.generateViewId();
-                myWebView.setId(ViewId);
-            }
-
-        } else {
-            ViewId = View.generateViewId();
-            myWebView.setId(ViewId);
-
-        }
-        myWebView.getSettings().setJavaScriptEnabled(true);
-        RelativeLayout layout = (RelativeLayout) findViewById(R.id.contentLayout);
-        assert layout != null;
-        layout.addView(myWebView, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-
-        if (Build.VERSION.SDK_INT >= 21) {
-            MyWebViewClient webClient = new MyWebViewClient(MainActivity.this);
-            myWebView.setWebViewClient(webClient);
-        } else {
-            MyWebViewClientOld webClient = new MyWebViewClientOld(MainActivity.this);
-            myWebView.setWebViewClient(webClient);
-        }
-        WebSettings webSettings = myWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        myWebView.getSettings().setBuiltInZoomControls(true);
-        myWebView.getSettings().setDisplayZoomControls(false);
-        CookieManager.getInstance().setAcceptCookie(true);
-        //String url = "https://rutracker.org/forum/index.php";
-        //String url = "http://myip.ru/";
-        Log.d("Rutracker free", "Opening: " + Rutracker.mainUrl);
-        myWebView.loadUrl(Rutracker.mainUrl);
-    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
