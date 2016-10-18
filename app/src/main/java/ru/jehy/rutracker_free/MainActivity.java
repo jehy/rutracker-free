@@ -131,24 +131,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //onionProxyManager.isRunning is a surprisingly heavy operation and should not be done on main thread...
-        Thread updateThread = new Thread() {
-            @Override
-            public void run() {
 
-                MyWebView myWebView = (MyWebView) MainActivity.this.findViewById(R.id.myWebView);
-                String loaded = myWebView.getOriginalUrl();
-                MyApplication appState = ((MyApplication) getApplicationContext());
-                try {
-                    if (loaded == null && onionProxyManager.isRunning())
-                        myWebView.loadUrl(appState.currentUrl);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        updateThread.run();
 
+        String loaded = myWebView.getOriginalUrl();
+        MyApplication appState = ((MyApplication) getApplicationContext());
+        try {
+            if (loaded == null && onionProxyManager.isRunning())
+                myWebView.loadUrl(appState.currentUrl);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
 
     public void setUpWebView(MyWebView myWebView) {
         myWebView.getSettings().setJavaScriptEnabled(true);
