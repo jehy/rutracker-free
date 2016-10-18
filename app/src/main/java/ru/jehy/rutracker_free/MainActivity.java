@@ -2,30 +2,33 @@ package ru.jehy.rutracker_free;
 
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import com.msopentech.thali.android.toronionproxy.AndroidOnionProxyManager;
 import com.msopentech.thali.toronionproxy.OnionProxyManager;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ru.jehy.rutracker_free.updater.AppUpdate;
 import ru.jehy.rutracker_free.updater.AppUpdateUtil;
 import ru.jehy.rutracker_free.updater.DownloadUpdateService;
+import ru.jehy.rutracker_free.updater.UpdateBroadcastReceiver;
 
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -33,8 +36,8 @@ public class MainActivity extends AppCompatActivity {
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
     public static OnionProxyManager onionProxyManager = null;
     public ShareActionProvider mShareActionProvider;
-    public int ViewId;
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
+    private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
 
     public static Intent createUpdateDialogIntent(AppUpdate update) {
         Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
@@ -42,17 +45,6 @@ public class MainActivity extends AppCompatActivity {
         return updateIntent;
     }
 
-    private final BroadcastReceiver showUpdateDialog = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            AppUpdate update = intent.getParcelableExtra("update");
-            if (update.getStatus() == AppUpdate.UPDATE_AVAILABLE && !isAppBeingUpdated(
-                    context)) {
-                AlertDialog updateDialog = AppUpdateUtil.getAppUpdateDialog(MainActivity.this, update);
-                updateDialog.show();
-            }
-        }
-    };
 
     public static boolean isAppBeingUpdated(Context context) {
 
@@ -69,23 +61,6 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    /**
-     * Generate a value suitable for use in setId(int).
-     * This value will not collide with ID values generated at build time by aapt for R.id.
-     *
-     * @return a generated ID value
-     */
-    public int generateViewId() {
-        for (; ; ) {
-            final int result = sNextGeneratedId.get();
-            // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
-            int newValue = result + 1;
-            if (newValue > 0x00FFFFFF) newValue = 1; // Roll over to 1, not 0.
-            if (sNextGeneratedId.compareAndSet(result, newValue)) {
-                return result;
-            }
-        }
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -100,6 +75,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("Rutracker free", "OnCreate");
+        if (onionProxyManager != null)
+            return;
+        //first init
         Thread updateThread = new Thread() {
             @Override
             public void run() {
@@ -107,11 +86,84 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         updateThread.start();
-        new TorPogressTask(MainActivity.this).execute();
+        String fileStorageLocation = "torfiles";
+        onionProxyManager =
+                new AndroidOnionProxyManager(this, fileStorageLocation);
+
+    }
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.d("Rutracker free", "onPause");
+        showUpdateDialog.unregister(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onStop();
+        Log.d("Rutracker free", "onDestroy");
+        /*if(onionProxyManager!=null)
+            try {
+                onionProxyManager.stop();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }*/
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d("Rutracker free", "onResume");
         setContentView(R.layout.activity_main);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-        LocalBroadcastManager.getInstance(this).registerReceiver(showUpdateDialog, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
+        MyWebView myWebView = (MyWebView) MainActivity.this.findViewById(R.id.myWebView);
+        if (!myWebView.setUp)
+            setUpWebView(myWebView);
+        showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
+        try {
+            if (!onionProxyManager.isRunning())
+                new TorPogressTask(MainActivity.this).execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //onionProxyManager.isRunning is a surprisingly heavy operation and should not be done on main thread...
+        Thread updateThread = new Thread() {
+            @Override
+            public void run() {
+
+                MyWebView myWebView = (MyWebView) MainActivity.this.findViewById(R.id.myWebView);
+                String loaded = myWebView.getOriginalUrl();
+                MyApplication appState = ((MyApplication) getApplicationContext());
+                try {
+                    if (loaded == null && onionProxyManager.isRunning())
+                        myWebView.loadUrl(appState.currentUrl);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        updateThread.run();
+
+    }
+
+    public void setUpWebView(MyWebView myWebView) {
+        myWebView.getSettings().setJavaScriptEnabled(true);
+        if (Build.VERSION.SDK_INT >= 21) {
+            MyWebViewClient webClient = new MyWebViewClient(MainActivity.this);
+            myWebView.setWebViewClient(webClient);
+        } else {
+            MyWebViewClientOld webClient = new MyWebViewClientOld(MainActivity.this);
+            myWebView.setWebViewClient(webClient);
+        }
+        WebSettings webSettings = myWebView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        myWebView.getSettings().setBuiltInZoomControls(true);
+        myWebView.getSettings().setDisplayZoomControls(false);
+        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
     }
 
     public void setShareIntent(final Intent shareIntent) {
@@ -132,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             switch (keyCode) {
                 case KeyEvent.KEYCODE_BACK:
-                    WebView myWebView = (WebView) findViewById(ViewId);
+                    WebView myWebView = (WebView) findViewById(R.id.myWebView);
                     assert myWebView != null;
                     if (myWebView.canGoBack()) {
                         myWebView.goBack();

@@ -12,9 +12,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
-
-import com.msopentech.thali.android.toronionproxy.AndroidOnionProxyManager;
 
 import java.io.IOException;
 
@@ -33,8 +30,9 @@ public class TorPogressTask extends AsyncTask<String, Void, Boolean> {
     private Context context;
 
     protected void onPreExecute() {
+        Log.d("rutracker-free","onPreExecute");
         dialog = new ProgressDialog(context);
-        dialog.setMessage("Initializing Tor...");
+        dialog.setMessage("Initializing Tor... Please be patient");
         dialog.setIndeterminate(false);
         dialog.setCancelable(false);
         dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
@@ -44,8 +42,7 @@ public class TorPogressTask extends AsyncTask<String, Void, Boolean> {
     @Override
     protected void onPostExecute(final Boolean success) {
 
-        if(!success)
-        {
+        if (!success) {
             AlertDialog.Builder builder1 = new AlertDialog.Builder(context);
             builder1.setMessage("Failed to load Tor. Retry?");
             builder1.setCancelable(true);
@@ -70,39 +67,14 @@ public class TorPogressTask extends AsyncTask<String, Void, Boolean> {
             AlertDialog alert11 = builder1.create();
             alert11.show();
         }
-        MyWebView myWebView = new MyWebView(context);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            {
-                activity.ViewId = activity.generateViewId();
-                myWebView.setId(activity.ViewId);
-            }
+        MyWebView myWebView = (MyWebView) activity.findViewById(R.id.myWebView);
+        assert myWebView!=null;
 
-        } else {
-            activity.ViewId = View.generateViewId();
-            myWebView.setId(activity.ViewId);
-
-        }
-        myWebView.getSettings().setJavaScriptEnabled(true);
-        RelativeLayout layout = (RelativeLayout) activity.findViewById(R.id.contentLayout);
-        assert layout != null;
-        layout.addView(myWebView, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-
-        if (Build.VERSION.SDK_INT >= 21) {
-            MyWebViewClient webClient = new MyWebViewClient(activity);
-            myWebView.setWebViewClient(webClient);
-        } else {
-            MyWebViewClientOld webClient = new MyWebViewClientOld(activity);
-            myWebView.setWebViewClient(webClient);
-        }
-        WebSettings webSettings = myWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        myWebView.getSettings().setBuiltInZoomControls(true);
-        myWebView.getSettings().setDisplayZoomControls(false);
-        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
+        MyApplication appState = ((MyApplication) activity.getApplicationContext());
+        myWebView.loadUrl(appState.currentUrl);
         //String url = "https://rutracker.org/forum/index.php";
         //String url = "http://myip.ru/";
-        Log.d("Rutracker free", "Opening: " + Rutracker.mainUrl);
-        myWebView.loadUrl(Rutracker.mainUrl);
+        Log.d("Rutracker free", "Opening: " + appState.currentUrl);
         dialog.setMessage("Loading...");
         myWebView.setWebChromeClient(new WebChromeClient() {
             public void onProgressChanged(WebView view, int progress) {
@@ -118,10 +90,6 @@ public class TorPogressTask extends AsyncTask<String, Void, Boolean> {
 
     @Override
     protected Boolean doInBackground(final String... args) {
-
-        String fileStorageLocation = "torfiles";
-        onionProxyManager =
-                new AndroidOnionProxyManager(context, fileStorageLocation);
         int totalSecondsPerTorStartup = 4 * 60;
         int totalTriesPerTorStartup = 5;
         dialog.setProgress(10);
