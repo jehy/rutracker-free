@@ -66,23 +66,6 @@ public class TorPogressTask extends AsyncTask<String, String, Boolean> {
         myWebView.loadUrl(appState.currentUrl);
         Log.d("Rutracker free", "Opening: " + appState.currentUrl);
         torStartProgress.dismiss();
-        final ProgressDialog pageLoadProgress = new ProgressDialog(activity);
-        pageLoadProgress.setMessage("Loading Page...");
-        pageLoadProgress.setIndeterminate(false);
-        pageLoadProgress.setCancelable(true);
-        pageLoadProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        pageLoadProgress.show();
-
-        myWebView.setWebChromeClient(new WebChromeClient() {
-            public void onProgressChanged(WebView view, int progress) {
-                if (progress > 80) {
-                    if (pageLoadProgress.isShowing())
-                        pageLoadProgress.dismiss();
-                } else
-                    pageLoadProgress.setProgress(progress);
-
-            }
-        });
     }
 
     @Override

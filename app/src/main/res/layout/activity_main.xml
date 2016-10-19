@@ -24,17 +24,28 @@
 
     <RelativeLayout
         android:id="@+id/contentLayout"
+        android:layout_below="@+id/my_toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/my_toolbar" />
+        android:layout_alignParentStart="true" />
+
 
     <ru.jehy.rutracker_free.MyWebView
         android:id="@+id/myWebView"
+        android:layout_below="@+id/my_toolbar"
+        android:layout_above="@+id/progressBar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:layout_margin="10dp"
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/my_toolbar" />
+        android:layout_alignParentStart="true"/>
+
 </RelativeLayout>
