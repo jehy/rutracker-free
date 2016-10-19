@@ -16,32 +16,32 @@ public class MyWebView extends WebView {
     public MyWebView(Context context) {
         super(context);
         //this.ActivityContext=context;
-        setUpWebView(this);
+        setUpWebView();
     }
 
     public MyWebView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        setUpWebView(this);
+        setUpWebView();
     }
 
     public MyWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        setUpWebView(this);
+        setUpWebView();
     }
 
-    public void setUpWebView(MyWebView myWebView) {
-        myWebView.getSettings().setJavaScriptEnabled(true);
+    public void setUpWebView() {
+        this.getSettings().setJavaScriptEnabled(true);
         if (Build.VERSION.SDK_INT >= 21) {
             MyWebViewClient webClient = new MyWebViewClient(this.getContext());
-            myWebView.setWebViewClient(webClient);
+            this.setWebViewClient(webClient);
         } else {
             MyWebViewClientOld webClient = new MyWebViewClientOld(this.getContext());
-            myWebView.setWebViewClient(webClient);
+            this.setWebViewClient(webClient);
         }
-        WebSettings webSettings = myWebView.getSettings();
+        WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        myWebView.getSettings().setBuiltInZoomControls(true);
-        myWebView.getSettings().setDisplayZoomControls(false);
+        this.getSettings().setBuiltInZoomControls(true);
+        this.getSettings().setDisplayZoomControls(false);
         android.webkit.CookieManager.getInstance().setAcceptCookie(true);
     }
 
