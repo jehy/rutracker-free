@@ -3,6 +3,7 @@ package ru.jehy.rutracker_free.updater;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+
 /*
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,14 +15,22 @@ import lombok.Setter;
 */
 public class AppUpdate implements Parcelable {
 
+    public static final int UPDATE_AVAILABLE = 1234;
+    public static final int UP_TO_DATE = 1235;
+    public static final int ERROR = 1236;
+    public static final Parcelable.Creator<AppUpdate> CREATOR = new Parcelable.Creator<AppUpdate>() {
+        public AppUpdate createFromParcel(Parcel in) {
+            return new AppUpdate(in);
+        }
+
+        public AppUpdate[] newArray(int size) {
+            return new AppUpdate[size];
+        }
+    };
     private String assetUrl;
     private String version;
     private String changelog;
     private int status;
-
-    public static final int UPDATE_AVAILABLE = 1234;
-    public static final int UP_TO_DATE = 1235;
-    public static final int ERROR = 1236;
 
     public AppUpdate(Parcel in) {
         assetUrl = in.readString();
@@ -34,7 +43,7 @@ public class AppUpdate implements Parcelable {
         this.assetUrl = url;
         this.version = version;
         this.changelog = changelog;
-        this.status =status;
+        this.status = status;
     }
 
     @Override
@@ -50,26 +59,16 @@ public class AppUpdate implements Parcelable {
         out.writeInt(status);
     }
 
-    public static final Parcelable.Creator<AppUpdate> CREATOR = new Parcelable.Creator<AppUpdate>() {
-        public AppUpdate createFromParcel(Parcel in) {
-            return new AppUpdate(in);
-        }
-
-        public AppUpdate[] newArray(int size) {
-            return new AppUpdate[size];
-        }
-    };
-
     public int getStatus() {
         return status;
     }
 
-    public String getVersion() {
-        return version;
-    }
-
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     public String getChangelog() {

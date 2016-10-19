@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -16,28 +15,24 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import com.msopentech.thali.android.toronionproxy.AndroidOnionProxyManager;
-import com.msopentech.thali.toronionproxy.OnionProxyManager;
-
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import ru.jehy.rutracker_free.updater.AppUpdate;
 import ru.jehy.rutracker_free.updater.AppUpdateUtil;
 import ru.jehy.rutracker_free.updater.DownloadUpdateService;
 import ru.jehy.rutracker_free.updater.UpdateBroadcastReceiver;
 
+import static ru.jehy.rutracker_free.MyApplication.onionProxyManager;
+
 
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
-    private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
-    public static OnionProxyManager onionProxyManager = null;
-    public ShareActionProvider mShareActionProvider;
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
     private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
+    public ShareActionProvider mShareActionProvider;
+    private boolean updateChecked = false;
 
     public static Intent createUpdateDialogIntent(AppUpdate update) {
         Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
@@ -76,20 +71,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d("Rutracker free", "OnCreate");
-        if (onionProxyManager != null)
+        if (updateChecked)
             return;
         //first init
         Thread updateThread = new Thread() {
             @Override
             public void run() {
                 AppUpdateUtil.checkForUpdate(MainActivity.this);
+                MainActivity.this.updateChecked = true;
             }
         };
         updateThread.start();
-        String fileStorageLocation = "torfiles";
-        onionProxyManager =
-                new AndroidOnionProxyManager(this, fileStorageLocation);
-
     }
 
 
@@ -120,17 +112,15 @@ public class MainActivity extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
         MyWebView myWebView = (MyWebView) MainActivity.this.findViewById(R.id.myWebView);
-        if (!myWebView.setUp)
-            setUpWebView(myWebView);
         showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
+
         try {
+            //TODO: onionProxyManager.isRunning is a surprisingly heavy operation and should not be done on main thread...
             if (!onionProxyManager.isRunning())
                 new TorPogressTask(MainActivity.this).execute();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        //onionProxyManager.isRunning is a surprisingly heavy operation and should not be done on main thread...
 
 
         String loaded = myWebView.getOriginalUrl();
@@ -143,22 +133,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    public void setUpWebView(MyWebView myWebView) {
-        myWebView.getSettings().setJavaScriptEnabled(true);
-        if (Build.VERSION.SDK_INT >= 21) {
-            MyWebViewClient webClient = new MyWebViewClient(MainActivity.this);
-            myWebView.setWebViewClient(webClient);
-        } else {
-            MyWebViewClientOld webClient = new MyWebViewClientOld(MainActivity.this);
-            myWebView.setWebViewClient(webClient);
-        }
-        WebSettings webSettings = myWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        myWebView.getSettings().setBuiltInZoomControls(true);
-        myWebView.getSettings().setDisplayZoomControls(false);
-        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
-    }
 
     public void setShareIntent(final Intent shareIntent) {
         runOnUiThread(new Runnable() {

@@ -15,9 +15,9 @@ import java.io.File;
 
 public class DownloadUpdateService extends Service {
 
-    private static final String FILE_NAME = "app_new.apk";
     public static final String DOWNLOAD_UPDATE_TITLE = "Updating rutracker-free";
     public static final String KEY_DOWNLOAD_URL = "downloadURL";
+    private static final String FILE_NAME = "app_new.apk";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {

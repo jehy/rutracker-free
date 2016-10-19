@@ -2,7 +2,6 @@ package ru.jehy.rutracker_free;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -11,35 +10,32 @@ import android.webkit.WebView;
 
 import java.io.IOException;
 
-import static ru.jehy.rutracker_free.MainActivity.onionProxyManager;
+import static ru.jehy.rutracker_free.MyApplication.onionProxyManager;
 
 public class TorPogressTask extends AsyncTask<String, String, Boolean> {
-    private ProgressDialog dialog;
+    ProgressDialog torStartProgress;
     private MainActivity activity;
 
     public TorPogressTask(MainActivity activity) {
         this.activity = activity;
-        context = activity;
-        dialog = new ProgressDialog(context);
     }
 
-    private Context context;
 
     protected void onPreExecute() {
         Log.d("rutracker-free", "onPreExecute");
-        dialog = new ProgressDialog(context);
-        dialog.setMessage("Initializing Tor... Please be patient");
-        dialog.setIndeterminate(false);
-        dialog.setCancelable(false);
-        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        dialog.show();
+        torStartProgress = new ProgressDialog(activity);
+        torStartProgress.setMessage("Starting Tor... Please be patient");
+        torStartProgress.setIndeterminate(false);
+        torStartProgress.setCancelable(false);
+        torStartProgress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        torStartProgress.show();
     }
 
     @Override
     protected void onPostExecute(final Boolean success) {
 
         if (!success) {
-            AlertDialog.Builder builder1 = new AlertDialog.Builder(context);
+            AlertDialog.Builder builder1 = new AlertDialog.Builder(activity);
             builder1.setMessage("Failed to load Tor. Retry?");
             builder1.setCancelable(true);
 
@@ -68,17 +64,22 @@ public class TorPogressTask extends AsyncTask<String, String, Boolean> {
 
         MyApplication appState = ((MyApplication) activity.getApplicationContext());
         myWebView.loadUrl(appState.currentUrl);
-        //String url = "https://rutracker.org/forum/index.php";
-        //String url = "http://myip.ru/";
         Log.d("Rutracker free", "Opening: " + appState.currentUrl);
-        dialog.setMessage("Loading Page...");
+        torStartProgress.dismiss();
+        final ProgressDialog pageLoadProgress = new ProgressDialog(activity);
+        pageLoadProgress.setMessage("Loading Page...");
+        pageLoadProgress.setIndeterminate(false);
+        pageLoadProgress.setCancelable(true);
+        pageLoadProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        pageLoadProgress.show();
+
         myWebView.setWebChromeClient(new WebChromeClient() {
             public void onProgressChanged(WebView view, int progress) {
                 if (progress > 80) {
-                    if (dialog.isShowing())
-                        dialog.dismiss();
+                    if (pageLoadProgress.isShowing())
+                        pageLoadProgress.dismiss();
                 } else
-                    dialog.setProgress(progress);
+                    pageLoadProgress.setProgress(progress);
 
             }
         });
@@ -87,19 +88,18 @@ public class TorPogressTask extends AsyncTask<String, String, Boolean> {
     @Override
     protected void onProgressUpdate(String... log) {
         super.onProgressUpdate(log);
-        dialog.setMessage("Initializing Tor..." + log[0]);
+        Log.e("TorProgressTask", "logging");
+        torStartProgress.setMessage("Initializing Tor..." + log[0]);
     }
 
     @Override
     protected Boolean doInBackground(final String... args) {
-        dialog.setProgress(10);
         Thread torThread = new Thread() {
             @Override
             public void run() {
-                int totalSecondsPerTorStartup = 4 * 60;
-                int totalTriesPerTorStartup = 5;
                 try {
-                    boolean ok = onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup);
+                    //boolean ok = onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup);
+                    boolean ok = onionProxyManager.installAndStartTorOp();
                     if (!ok)
                         Log.e("TorTest", "Couldn't start Tor!");
 
@@ -125,20 +125,25 @@ public class TorPogressTask extends AsyncTask<String, String, Boolean> {
         };
         torChecker.start();
 
-// Start the Tor Onion Proxy
-        dialog.setProgress(20);
         try {
+            int timePassed = 0;
+            String log = null;
             while (torChecker.isAlive()) {
                 Thread.sleep(100);
-                publishProgress(onionProxyManager.getLastLog());
-                //Log.e("ru", "ololo");
+                timePassed += 100;
+                String logNew = onionProxyManager.getLastLog();
+                if (logNew.length() > 1 && !logNew.equals(log)) {
+                    publishProgress(logNew);
+                    log = logNew;
+                }
+                if (timePassed > 1000 * 60 * 2)
+                    return false;
             }
 
             Log.v("Rutracker Free", "Tor initialized on port " + onionProxyManager.getIPv4LocalHostSocksPort());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        dialog.setProgress(90);
 
         return true;
     }

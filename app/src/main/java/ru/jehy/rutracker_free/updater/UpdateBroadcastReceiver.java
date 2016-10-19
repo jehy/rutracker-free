@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v7.app.AlertDialog;
 
-import ru.jehy.rutracker_free.MainActivity;
-
 import static ru.jehy.rutracker_free.MainActivity.isAppBeingUpdated;
 
 /**
@@ -16,6 +14,7 @@ import static ru.jehy.rutracker_free.MainActivity.isAppBeingUpdated;
 
 public class UpdateBroadcastReceiver extends BroadcastReceiver {
     public boolean isRegistered;
+
     public Intent register(Context context, IntentFilter filter) {
         isRegistered = true;
         return context.registerReceiver(this, filter);
@@ -29,6 +28,7 @@ public class UpdateBroadcastReceiver extends BroadcastReceiver {
         }
         return false;
     }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         AppUpdate update = intent.getParcelableExtra("update");
