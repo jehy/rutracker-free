@@ -13,7 +13,8 @@
         android:supportsRtl="true"
         android:name="ru.jehy.rutracker_free.MyApplication"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name="ru.jehy.rutracker_free.MainActivity">
+        <activity android:name="ru.jehy.rutracker_free.MainActivity"
+            android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
