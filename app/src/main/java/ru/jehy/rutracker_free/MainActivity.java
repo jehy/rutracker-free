@@ -24,11 +24,12 @@ import ru.jehy.rutracker_free.updater.AppUpdateUtil;
 import ru.jehy.rutracker_free.updater.DownloadUpdateService;
 import ru.jehy.rutracker_free.updater.UpdateBroadcastReceiver;
 
-import static ru.jehy.rutracker_free.MyApplication.onionProxyManager;
+import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
 
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
     private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
     public ShareActionProvider mShareActionProvider;
@@ -70,9 +71,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("Rutracker free", "OnCreate");
-        if (updateChecked)
+        Log.d(TAG, "OnCreate");
+        if (updateChecked) {
             return;
+        }
         //first init
         Thread updateThread = new Thread() {
             @Override
@@ -107,24 +109,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        Log.d("Rutracker free", "onResume");
+        Log.d(TAG, "onResume");
         setContentView(R.layout.activity_main);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-        MyWebView myWebView = (MyWebView) MainActivity.this.findViewById(R.id.myWebView);
+        RutrackerWebView myWebView = (RutrackerWebView) MainActivity.this.findViewById(R.id.myWebView);
         showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
 
-        try {
-            //TODO: onionProxyManager.isRunning is a surprisingly heavy operation and should not be done on main thread...
-            if (!onionProxyManager.isRunning())
-                new TorPogressTask(MainActivity.this).execute();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        new TorProgressTask(MainActivity.this).execute();
 
         String loaded = myWebView.getOriginalUrl();
-        MyApplication appState = ((MyApplication) getApplicationContext());
+        RutrackerApplication appState = ((RutrackerApplication) getApplicationContext());
         try {
             if (loaded == null && onionProxyManager.isRunning())
                 myWebView.loadUrl(appState.currentUrl);
