@@ -31,7 +31,7 @@
         android:layout_alignParentStart="true" />
 
 
-    <ru.jehy.rutracker_free.MyWebView
+    <ru.jehy.rutracker_free.RutrackerWebView
         android:id="@+id/myWebView"
         android:layout_below="@+id/my_toolbar"
         android:layout_above="@+id/progressBar"

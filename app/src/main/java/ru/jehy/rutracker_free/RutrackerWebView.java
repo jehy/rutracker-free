@@ -13,58 +13,58 @@ import android.widget.ProgressBar;
  * Created by Bond on 2016-03-12.
  */
 
-public class MyWebView extends WebView {
+public class RutrackerWebView extends WebView {
     private boolean init = false;
-    private Context activityContext;
-    public MyWebView(Context context) {
+
+    public RutrackerWebView(Context context) {
         super(context);
-        this.activityContext=context;
         setUpWebView();
     }
 
-    public MyWebView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public RutrackerWebView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        this.activityContext=context;
         setUpWebView();
     }
 
-    public MyWebView(Context context, AttributeSet attrs) {
+    public RutrackerWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.activityContext=context;
         setUpWebView();
     }
 
     public void setUpWebView() {
-        if (this.isInEditMode())
+        if (this.isInEditMode()) {
             return;
-        this.getSettings().setJavaScriptEnabled(true);
-        if (Build.VERSION.SDK_INT >= 21) {
-            MyWebViewClient webClient = new MyWebViewClient(this.getContext());
-            this.setWebViewClient(webClient);
-        } else {
-            MyWebViewClientOld webClient = new MyWebViewClientOld(this.getContext());
-            this.setWebViewClient(webClient);
         }
+
+        RutrackerWebViewClient webClient;
+        webClient = new RutrackerWebViewClient(this.getContext());
+        this.setWebViewClient(webClient);
+
         WebSettings webSettings = this.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        this.getSettings().setBuiltInZoomControls(true);
-        this.getSettings().setDisplayZoomControls(false);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
+
         android.webkit.CookieManager.getInstance().setAcceptCookie(true);
     }
 
     private void initProgressBar() {
-        if (init) return;
+        if (init) {
+            return;
+        }
         init = true;
-        final ProgressBar p = (ProgressBar) ((MainActivity)activityContext).findViewById(R.id.progressBar);
+        final ProgressBar progressBar = (ProgressBar) ((MainActivity) getContext()).findViewById(R.id.progressBar);
         this.setWebChromeClient(new WebChromeClient() {
             public void onProgressChanged(WebView view, int progress) {
                 if (progress > 80) {
-                    if (p.getVisibility() == View.VISIBLE)
-                        p.setVisibility(View.GONE);
+                    if (progressBar.getVisibility() == View.VISIBLE) {
+                        progressBar.setVisibility(View.GONE);
+                    }
                 } else {
-                    if (p.getVisibility() == View.GONE)
-                        p.setVisibility(View.VISIBLE);
-                    p.setProgress(progress);
+                    if (progressBar.getVisibility() == View.GONE) {
+                        progressBar.setVisibility(View.VISIBLE);
+                    }
+                    progressBar.setProgress(progress);
                 }
             }
         });
@@ -73,7 +73,7 @@ public class MyWebView extends WebView {
     @Override
     public void loadUrl(String url) {
         super.loadUrl(url);
-        MyApplication appState = ((MyApplication) this.getContext().getApplicationContext());
+        RutrackerApplication appState = ((RutrackerApplication) getContext().getApplicationContext());
         appState.currentUrl = url;
         initProgressBar();
     }

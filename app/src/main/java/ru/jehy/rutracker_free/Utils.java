@@ -26,6 +26,8 @@ import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 public class Utils {
 
+    private static final String TAG = "Utils";
+
     public static String md5(final String s) {
         final String MD5 = "MD5";
         try {
@@ -82,17 +84,18 @@ public class Utils {
         StringBuilder total = new StringBuilder();
         String line;
         try {
-            if (r != null)
+            if (r != null) {
                 while ((line = r.readLine()) != null) {
                     total.append("\n").append(line);
                 }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
         return total.toString();
     }
 
-    public static Map<String, String> getQueryMap(String query) {
+    private static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
         Map<String, String> map = new HashMap<>();
         for (String param : params) {
@@ -103,15 +106,16 @@ public class Utils {
         return map;
     }
 
-    @SuppressWarnings("UnusedAssignment")
+
     public static UrlEncodedFormEntity get2post(Uri url) {
         Set<String> params = url.getQueryParameterNames();
-        if (params.isEmpty())
+        if (params.isEmpty()) {
             return null;
+        }
 
         List<NameValuePair> paramsArray = new ArrayList<>();
 
-        Log.d("Utils", "Getting URL parameters from URL " + url.toString());
+        Log.d(TAG, "Getting URL parameters from URL " + url.toString());
         //String urlStr = null;
 
         Map<String, String> map = getQueryMap(url.toString());
@@ -123,7 +127,7 @@ public class Utils {
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
-            Log.d("Utils", "converting parameter " + name + " to post, value " + value);
+            Log.d(TAG, "converting parameter " + name + " to post, value " + value);
             paramsArray.add(new BasicNameValuePair(name, value));
         }
         try {

@@ -1,19 +1,19 @@
 package ru.jehy.rutracker_free;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 
-class MyWebViewClient extends WebViewClient {
+class RutrackerWebViewClient extends WebViewClient {
 
     ProxyProcessor proxy = null;
 
-    public MyWebViewClient(Context c) {
+    public RutrackerWebViewClient(Context c) {
         proxy = new ProxyProcessor(c);
     }
 
@@ -23,8 +23,8 @@ class MyWebViewClient extends WebViewClient {
         return true;
     }
 
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         WebResourceResponse w = proxy.shouldInterceptRequest(view, request);
         if (w == null)
@@ -32,5 +32,15 @@ class MyWebViewClient extends WebViewClient {
         else
             return w;
     }
+
+    @Override
+    public WebResourceResponse shouldInterceptRequest(WebView view, String urlString) {
+        WebResourceResponse w = proxy.shouldInterceptRequest(view, urlString);
+        if (w == null)
+            return super.shouldInterceptRequest(view, urlString);
+        else
+            return w;
+    }
+
 
 }
