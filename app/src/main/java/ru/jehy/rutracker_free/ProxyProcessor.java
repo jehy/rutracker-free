@@ -1,10 +1,10 @@
 package ru.jehy.rutracker_free;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -31,7 +31,7 @@ import cz.msebera.android.httpclient.impl.client.HttpClients;
 import cz.msebera.android.httpclient.impl.conn.PoolingHttpClientConnectionManager;
 import cz.msebera.android.httpclient.ssl.SSLContexts;
 
-import static ru.jehy.rutracker_free.MyApplication.onionProxyManager;
+import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
 //import org.apache.custom.http.conn.scheme.PlainSocketFactory;
 //import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
@@ -61,7 +61,7 @@ public class ProxyProcessor {
                 .build();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         Uri url = request.getUrl();
         return this.process(url, request.getMethod(), view, request.getRequestHeaders());
@@ -76,7 +76,7 @@ public class ProxyProcessor {
         return "Что-то пошло не так при запросе страницы<br>" + url + ":<br>Сообщение: " + e.getMessage() +
                 "<br>Код: " +
                 "Вы можете <a href=\"javascript:location.reload(true)\">Обновить страницу</a>" +
-                "или <a href=\"" + Rutracker.mainUrl + "\">вернуться на главную</a>";
+                "или <a href=\"" + Rutracker.MAIN_URL + "\">вернуться на главную</a>";
     }
 
     public WebResourceResponse process(Uri url, String method, WebView view, Map<String, String> headers) {
@@ -89,7 +89,7 @@ public class ProxyProcessor {
         }
         if (url.getPath().contains("logout.php")) {
             CookieManager.clear(MainContext);
-            url = Uri.parse(Rutracker.mainUrl);
+            url = Uri.parse(Rutracker.MAIN_URL);
         }
 
         if (Rutracker.isAdvertisment(url)) {
@@ -298,7 +298,7 @@ public class ProxyProcessor {
                         "<br>Адрес: " + url.toString() + "<br>" +
                         "<br>Код: " + responseCode + "<br>" +
                         "Вы можете <a href=\"javascript:location.reload(true)\">Обновить страницу</a>" +
-                        "или <a href=\"" + Rutracker.mainUrl + "\">вернуться на главную</a>";
+                        "или <a href=\"" + Rutracker.MAIN_URL + "\">вернуться на главную</a>";
                 ByteArrayInputStream msgStream = new ByteArrayInputStream(msgText.getBytes("UTF-8"));
                 return new WebResourceResponse("text/html", "UTF-8", msgStream);
 

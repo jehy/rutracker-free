@@ -15,37 +15,39 @@ import android.util.Log;
  */
 public class CookieManager {
     public static final String KEY = "cookie";
+    private static final String TAG = "CookieManager";
 
-    static String get(Context mContext) {
+    public static String get(Context mContext) {
         SharedPreferences settings = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
         //if(!settings.contains(KEY))
         //    return null;
-        String access_token = settings.getString(KEY, null);
-        if (access_token == null)
-            Log.d("TokenManager", "No token stored! ");
-        else
-            Log.d("TokenManager", "Got token " + access_token);
-        return access_token;
+        String value = settings.getString(KEY, null);
+        if (value == null) {
+            Log.d(TAG, "No value stored! ");
+        } else {
+            Log.d(TAG, "Got value " + value);
+        }
+        return value;
     }
 
     @SuppressLint("CommitPrefEdits")
-    static void clear(Context mContext) {
+    public static void clear(Context mContext) {
         SharedPreferences settings = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
         SharedPreferences.Editor editor = settings.edit();
         editor.remove(KEY);
         editor.commit();
-        Log.d("TokenManager", "Cleared saved cookie");
+        Log.d(TAG, "Cleared saved cookie");
     }
 
     @SuppressLint("CommitPrefEdits")
-    static void put(Context mContext, String token) {
+    public static void put(Context mContext, String token) {
         SharedPreferences settings = PreferenceManager
                 .getDefaultSharedPreferences(mContext);
         SharedPreferences.Editor editor = settings.edit();
         editor.putString(KEY, token);
-        Log.d("TokenManager", "Saved token " + token);
+        Log.d(TAG, "Saved token " + token);
         editor.commit();
     }
 }
