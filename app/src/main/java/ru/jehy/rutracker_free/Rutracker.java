@@ -21,6 +21,10 @@ public class Rutracker {
         ));
     }
 
+    public static boolean isRutracker(String url) {
+        return isRutracker(Uri.parse(url));
+    }
+
     public static boolean isWiki(Uri url) {
         String host = url.getHost().toLowerCase();
         return host.equals("rutracker.wiki") || isRutracker(url) && url.getPath().toLowerCase().startsWith("/go/");
