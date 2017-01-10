@@ -7,9 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -17,16 +15,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
 
+import com.crashlytics.android.Crashlytics;
+
 import java.io.IOException;
 
+import io.fabric.sdk.android.Fabric;
 import ru.jehy.rutracker_free.updater.AppUpdate;
 import ru.jehy.rutracker_free.updater.AppUpdateUtil;
 import ru.jehy.rutracker_free.updater.DownloadUpdateService;
 import ru.jehy.rutracker_free.updater.UpdateBroadcastReceiver;
 
 import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
-import com.crashlytics.android.Crashlytics;
-import io.fabric.sdk.android.Fabric;
 
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -34,8 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
     private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
-    public ShareActionProvider mShareActionProvider;
+    //public ShareActionProvider mShareActionProvider;
     private boolean updateChecked = false;
+    private Menu optionsMenu;
 
     public static Intent createUpdateDialogIntent(AppUpdate update) {
         Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
@@ -64,8 +64,12 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.actionbar, menu);
+        optionsMenu = menu;
         MenuItem item = menu.findItem(R.id.menu_item_share);
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        item.setVisible(false);
+        item = menu.findItem(R.id.menu_item_magnet);
+        item.setVisible(false);
+        //mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
         //this.invalidateOptionsMenu();
         return true;
     }
@@ -133,17 +137,36 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void setShareIntent(final Intent shareIntent) {
-        runOnUiThread(new Runnable() {
+        MenuItem item = optionsMenu.findItem(R.id.menu_item_share);
+        String msg = getResources().getString(R.string.action_share);
+        setIntent(item, shareIntent, msg);
+    }
+
+    public void setShareLinkIntent(final Intent shareIntent) {
+        MenuItem item = optionsMenu.findItem(R.id.menu_item_magnet);
+        String msg = getResources().getString(R.string.action_share_magnet);
+        setIntent(item, shareIntent, msg);
+    }
+
+    public void setIntent(final MenuItem item, final Intent shareIntent, final String title) {
+        this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (mShareActionProvider != null) {
-                    mShareActionProvider.setShareIntent(shareIntent);
+                if (shareIntent == null) {
+                    item.setVisible(false);
+                    return;
                 }
-
+                item.setVisible(true);
+                item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
+                        startActivity(Intent.createChooser(shareIntent, title));
+                        return false;
+                    }
+                });
             }
         });
     }
-
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
