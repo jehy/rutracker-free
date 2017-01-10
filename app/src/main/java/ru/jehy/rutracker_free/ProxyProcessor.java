@@ -212,10 +212,11 @@ public class ProxyProcessor {
                     }
                     String shareMsg = "Посмотри, что я нашёл на рутрекере при помощи приложения rutracker free: \n" + shareUrl;
                     int start = data.indexOf("href=\"magnet:");
+                    String link="";
                     if (start != -1) {
                         start += 13;
                         int end = data.indexOf("\"", start);
-                        String link = data.substring(start, end);
+                        link = data.substring(start, end);
                         shareMsg += "\n\nMagnet ссылка на скачивание:\nmagnet:" + link;
                     }
                     Intent mShareIntent = new Intent();
@@ -223,6 +224,17 @@ public class ProxyProcessor {
                     mShareIntent.setType("text/plain");
                     mShareIntent.putExtra(Intent.EXTRA_TEXT, shareMsg);
                     ((MainActivity) this.context).setShareIntent(mShareIntent);
+
+                    if(link.length()>0) {
+                        Intent mShareLinkIntent = new Intent();
+                        mShareLinkIntent.setAction(Intent.ACTION_SEND);
+                        mShareLinkIntent.setType("text/plain");
+                        mShareLinkIntent.putExtra(Intent.EXTRA_TEXT, "magnet:" + link);
+                        ((MainActivity) this.context).setShareLinkIntent(mShareLinkIntent);
+                    }
+                    else
+                        ((MainActivity) this.context).setShareLinkIntent(null);
+
                     //((MainActivity) context).invalidateOptionsMenu();
 
                 }
