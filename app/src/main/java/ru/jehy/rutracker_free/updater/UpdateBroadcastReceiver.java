@@ -4,8 +4,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 
+import ru.jehy.rutracker_free.MainActivity;
+
+import static ru.jehy.rutracker_free.MainActivity.ACTION_SHOW_UPDATE_DIALOG;
 import static ru.jehy.rutracker_free.MainActivity.isAppBeingUpdated;
 
 /**
@@ -14,15 +18,17 @@ import static ru.jehy.rutracker_free.MainActivity.isAppBeingUpdated;
 
 public class UpdateBroadcastReceiver extends BroadcastReceiver {
     public boolean isRegistered;
-
-    public Intent register(Context context, IntentFilter filter) {
+    private MainActivity activity;
+    public void register(MainActivity context, IntentFilter filter) {
         isRegistered = true;
-        return context.registerReceiver(this, filter);
+        activity=context;
+        LocalBroadcastManager.getInstance(context).registerReceiver(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));//context.registerReceiver(this, filter);
     }
 
     public boolean unregister(Context context) {
         if (isRegistered) {
-            context.unregisterReceiver(this);  // edited
+            LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
+            //context.unregisterReceiver(this);  // edited
             isRegistered = false;
             return true;
         }
@@ -34,7 +40,7 @@ public class UpdateBroadcastReceiver extends BroadcastReceiver {
         AppUpdate update = intent.getParcelableExtra("update");
         if (update.getStatus() == AppUpdate.UPDATE_AVAILABLE && !isAppBeingUpdated(
                 context)) {
-            AlertDialog updateDialog = AppUpdateUtil.getAppUpdateDialog(context, update);
+            AlertDialog updateDialog = AppUpdateUtil.getAppUpdateDialog(activity, update);
             updateDialog.show();
         }
     }
