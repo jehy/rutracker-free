@@ -25,6 +25,8 @@ import ru.jehy.rutracker_free.updater.DownloadUpdateService;
 import ru.jehy.rutracker_free.updater.UpdateBroadcastReceiver;
 
 import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
 
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -71,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Fabric.with(this, new Crashlytics());
         Log.d(TAG, "OnCreate");
         if (updateChecked) {
             return;
