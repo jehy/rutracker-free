@@ -79,18 +79,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Fabric.with(this, new Crashlytics());
         Log.d(TAG, "OnCreate");
-        if (updateChecked) {
-            return;
-        }
-        //first init
-        Thread updateThread = new Thread() {
-            @Override
-            public void run() {
-                AppUpdateUtil.checkForUpdate(MainActivity.this);
-                MainActivity.this.updateChecked = true;
-            }
-        };
-        updateThread.start();
     }
 
 
@@ -122,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(myToolbar);
         RutrackerWebView myWebView = (RutrackerWebView) MainActivity.this.findViewById(R.id.myWebView);
         showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
-
         new TorProgressTask(MainActivity.this).execute();
 
         String loaded = myWebView.getOriginalUrl();
@@ -133,6 +120,20 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        if (updateChecked) {
+            return;
+        }
+        //first init
+        Thread updateThread = new Thread() {
+            @Override
+            public void run() {
+                AppUpdateUtil.checkForUpdate(MainActivity.this);
+                MainActivity.this.updateChecked = true;
+            }
+        };
+        updateThread.start();
     }
 
 
