@@ -16,8 +16,15 @@ public class RutrackerApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        String fileStorageLocation = "torfiles";
-        onionProxyManager =
-                new AndroidOnionProxyManager(this, fileStorageLocation);
+        final String fileStorageLocation = "torfiles";
+
+        Thread initThread = new Thread() {
+            @Override
+            public void run() {
+                onionProxyManager =
+                        new AndroidOnionProxyManager(RutrackerApplication.this, fileStorageLocation);
+            }
+        };
+        initThread.run();
     }
 }
