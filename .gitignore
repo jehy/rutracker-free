@@ -7,6 +7,10 @@
 /build
 /captures
 
+#manifest with fabric key
+/app/src/release
+app/fabric.properties
+
 #built application files
 *.apk
 *.ap_
