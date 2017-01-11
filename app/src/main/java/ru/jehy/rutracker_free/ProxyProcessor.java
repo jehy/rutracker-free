@@ -3,12 +3,11 @@ package ru.jehy.rutracker_free;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
+
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.ContentViewEvent;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,9 +33,6 @@ import cz.msebera.android.httpclient.ssl.SSLContexts;
 
 import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
-//import org.apache.custom.http.conn.scheme.PlainSocketFactory;
-//import cz.msebera.android.httpclient.impl.client.DefaultHttpClient;
-//import cz.msebera.android.httpclient.impl.conn.tsccm.ThreadSafeClientConnManager;
 
 /**
  * Created by jehy on 2016-03-31.
@@ -191,6 +187,17 @@ public class ProxyProcessor {
                     encoding = ENCODING_WINDOWS_1251;//for rutracker only
                     String data = Utils.convertStreamToString(inputStream, encoding);
 
+                    String title;
+                    int start=data.indexOf("<title>");
+                    int end=data.indexOf("</title>",start);
+                    title=data.substring(start+7,end);
+                    if(title.length()!=0) {
+                        title=title.replace(" :: RuTracker.org","");
+                        Answers.getInstance().logContentView(new ContentViewEvent()//just for lulz
+                                .putContentName(title)
+                                .putContentType("page"));
+                    }
+
                     //convert POST data to GET data to be able ro intercept it
                     String replace = "<form(.*?)method=\"post\"(.*?)>";
                     String replacement = "<form$1method=\"get\"$2><input type=\"hidden\" name=\"convert_post\" value=1>";
@@ -206,16 +213,20 @@ public class ProxyProcessor {
                     inputStream = new ByteArrayInputStream(data.getBytes(encoding));
                     //Log.d(VIEW_TAG, "data " + data);
                     String shareUrl = url.toString();
-                    int pos = shareUrl.indexOf("&login_username");
-                    if (pos != -1) {
-                        shareUrl = shareUrl.substring(0, pos);
+                    start = shareUrl.indexOf("&login_username");
+                    if (start != -1) {
+                        shareUrl = shareUrl.substring(0, start);
                     }
-                    String shareMsg = "Посмотри, что я нашёл на рутрекере при помощи приложения rutracker free: \n" + shareUrl;
-                    int start = data.indexOf("href=\"magnet:");
-                    String link="";
+                    String shareMsg = "Посмотри, что я нашёл на рутрекере при помощи приложения rutracker free: \n";
+                    if (title.length() != 0) {
+                        shareMsg += title + "\n";
+                    }
+                    shareMsg += shareUrl;
+                    start = data.indexOf("href=\"magnet:");
+                    String link = "";
                     if (start != -1) {
                         start += 13;
-                        int end = data.indexOf("\"", start);
+                        end = data.indexOf("\"", start);
                         link = data.substring(start, end);
                         shareMsg += "\n\nMagnet ссылка на скачивание:\nmagnet:" + link;
                     }
