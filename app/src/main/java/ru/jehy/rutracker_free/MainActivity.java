@@ -18,6 +18,8 @@ import android.webkit.WebView;
 import com.crashlytics.android.Crashlytics;
 
 import java.io.IOException;
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.core.CrashlyticsCore;
 
 import io.fabric.sdk.android.Fabric;
 import ru.jehy.rutracker_free.updater.AppUpdate;
@@ -77,8 +79,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Fabric.with(this, new Crashlytics());
-        Log.d(TAG, "OnCreate");
+        Log.d(TAG, "OnCreate");CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+                .disabled(BuildConfig.DEBUG)
+                .build();
+
+        Crashlytics crashlytics = new Crashlytics.Builder()
+                .core(crashlyticsCore)
+                .build();
+
+        Answers answers = new Answers();
+
+        Fabric fabric = new Fabric.Builder(this)
+                .kits(crashlytics, answers)
+                .build();
+
+        Fabric.with(fabric);
     }
 
 
