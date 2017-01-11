@@ -124,10 +124,8 @@ public class AppUpdateUtil {
                         dialogInterface.dismiss();
                         boolean writable = false;//sometimes downloads dir writable... sometimes not :(
                         File dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-                        try {
+                        if (dir != null) {
                             writable = dir.canWrite();
-                        } catch (NullPointerException e) {
-                            e.printStackTrace();
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !writable) {
                             int permissionCheck = context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
