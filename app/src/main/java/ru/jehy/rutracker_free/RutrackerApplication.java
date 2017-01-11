@@ -25,6 +25,6 @@ public class RutrackerApplication extends Application {
                         new AndroidOnionProxyManager(RutrackerApplication.this, fileStorageLocation);
             }
         };
-        initThread.run();
+        initThread.start();
     }
 }
