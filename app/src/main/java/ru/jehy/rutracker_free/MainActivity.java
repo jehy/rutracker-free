@@ -5,8 +5,10 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -16,10 +18,10 @@ import android.view.MenuItem;
 import android.webkit.WebView;
 
 import com.crashlytics.android.Crashlytics;
-
-import java.io.IOException;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.core.CrashlyticsCore;
+
+import java.io.IOException;
 
 import io.fabric.sdk.android.Fabric;
 import ru.jehy.rutracker_free.updater.AppUpdate;
@@ -34,6 +36,7 @@ import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
+    public final static int PERMISSION_WRITE = 1;
     private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
     //public ShareActionProvider mShareActionProvider;
     private boolean updateChecked = false;
@@ -61,6 +64,27 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSION_WRITE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    Log.v(TAG, "PERMISSION_WRITE granted for updater");
+                    AppUpdateUtil.startUpdate(this);
+
+                } else {
+                    Log.w(TAG, "PERMISSION_WRITE NOT granted for updater");
+                }
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -135,7 +159,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        checkUpdates();
+    }
+    public void checkUpdates()
+    {
 
         if (updateChecked) {
             return;
