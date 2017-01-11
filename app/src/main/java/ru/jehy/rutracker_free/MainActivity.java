@@ -103,7 +103,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "OnCreate");CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+        Log.d(TAG, "OnCreate");
+        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
                 .disabled(BuildConfig.DEBUG)
                 .build();
 
@@ -147,22 +148,41 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-        RutrackerWebView myWebView = (RutrackerWebView) MainActivity.this.findViewById(R.id.myWebView);
         showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
         new TorProgressTask(MainActivity.this).execute();
-
-        String loaded = myWebView.getOriginalUrl();
-        RutrackerApplication appState = ((RutrackerApplication) getApplicationContext());
-        try {
-            if (loaded == null && onionProxyManager.isRunning())
-                myWebView.loadUrl(appState.currentUrl);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        initWebView();
         checkUpdates();
     }
-    public void checkUpdates()
-    {
+
+    public void initWebView() {
+        /*
+        * That function looks damn bad. But we need to call onionProxyManager.isRunning from non UI thread
+        * and then we need to call myWebView.loadUrl from UI thread...
+        * */
+        final RutrackerWebView myWebView = (RutrackerWebView) MainActivity.this.findViewById(R.id.myWebView);
+        final String loaded = myWebView.getOriginalUrl();
+        final RutrackerApplication appState = ((RutrackerApplication) getApplicationContext());
+
+        Thread checkTorThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    if (loaded == null && onionProxyManager.isRunning())
+                        MainActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                myWebView.loadUrl(appState.currentUrl);
+                            }
+                        });
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        checkTorThread.start();
+    }
+
+    public void checkUpdates() {
 
         if (updateChecked) {
             return;
