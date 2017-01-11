@@ -24,8 +24,13 @@ public class SemVer implements Comparable<SemVer> {
         if (versionParts.length > 1)
             minorVersion = Integer.parseInt(versionParts[1]);
         int patchVersion = 0;
-        if (versionParts.length > 2)
-            patchVersion = Integer.parseInt(versionParts[2].charAt(0) + "");
+        if (versionParts.length > 2) {
+            try {
+                patchVersion = Integer.parseInt(versionParts[2]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
         return new SemVer(majorVersion, minorVersion, patchVersion);
     }
 
