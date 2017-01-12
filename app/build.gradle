@@ -2,6 +2,7 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
@@ -28,7 +29,7 @@ repositories {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25"
+    buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 16
