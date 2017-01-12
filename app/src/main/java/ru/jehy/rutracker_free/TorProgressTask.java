@@ -62,7 +62,8 @@ public class TorProgressTask extends AsyncTask<String, String, Boolean> {
         RutrackerApplication appState = ((RutrackerApplication) activity.getApplicationContext());
         myWebView.loadUrl(appState.currentUrl);
         Log.d(TAG, "Opening: " + appState.currentUrl);
-        torStartProgress.dismiss();
+        if (torStartProgress != null && torStartProgress.isShowing())
+            torStartProgress.dismiss();
     }
 
     @Override
