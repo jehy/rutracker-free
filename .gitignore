@@ -16,6 +16,8 @@ app/fabric.properties
 *.ap_
 *.jar
 
+!gradle/wrapper/gradle-wrapper.jar
+
 # files for the dex VM
 *.dex
 

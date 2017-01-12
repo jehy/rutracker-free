@@ -1,4 +1,7 @@
-# rutracker-free
+#Rutracker-Free
+
+[![Build Status](https://travis-ci.org/jehy/rutracker-free.svg?branch=master)](https://travis-ci.org/jehy/rutracker-free)
+
 Android thin client for rutracker.org.
 Version 9.0 implemented TOR
 (using my [own library distribution](https://github.com/jehy/Tor-Onion-Proxy-Library))
