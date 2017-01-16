@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.IOException;
@@ -62,6 +63,16 @@ public class TorProgressTask extends AsyncTask<String, String, Boolean> {
         RutrackerApplication appState = ((RutrackerApplication) activity.getApplicationContext());
         myWebView.loadUrl(appState.currentUrl);
         Log.d(TAG, "Opening: " + appState.currentUrl);
+
+        //for crash http://stackoverflow.com/questions/22924825/view-not-attached-to-window-manager-crash
+        // issue #29
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            if (activity.isDestroyed()) {
+                return;
+            }
+        } else if (activity.isFinishing()) {
+            return;
+        }
         if (torStartProgress != null && torStartProgress.isShowing())
             torStartProgress.dismiss();
     }
