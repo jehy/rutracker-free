@@ -28,14 +28,22 @@ repositories {
 }
 
 android {
+
+    productFlavors {
+        prod
+        travis {
+            // Disable fabric build ID generation for travis builds
+            ext.enableCrashlytics = false
+        }
+    }
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 16
         targetSdkVersion 25
-        versionName '9.1.0'
-        versionCode 20
+        versionName '9.1.1'
+        versionCode 21
     }
     buildTypes {
         release {
@@ -44,9 +52,8 @@ android {
         }
         debug {
             // Disable fabric build ID generation for debug builds
-            ext.enableCrashlytics = false}
-    }
-    productFlavors {
+            ext.enableCrashlytics = false
+        }
     }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

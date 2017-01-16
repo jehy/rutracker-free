@@ -5,7 +5,8 @@ android:
     - tools
     - build-tools-25.0.2
     - platform-tools
-
+    - extra-android-m2repository
+    - extra-google-android-support
     # The BuildTools version used by your project
     #- build-tools-19.1.0
 
@@ -23,6 +24,8 @@ android:
     - sys-img-armeabi-v7a-android-21
     - sys-img-armeabi-v7a-android-22
     - sys-img-armeabi-v7a-android-25
+script:
+  - ./gradlew  assembleTravisRelease
 jdk: oraclejdk8
 os:
   - linux

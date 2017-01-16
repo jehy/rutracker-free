@@ -23,10 +23,11 @@ To build project, you will need:
 * Android Studio 2.1+
 
 #Build instructions
-* If you are making a **release** build, add your own [fabric](https://fabric.io) key to application manifest in `application` block like this:
-```xml
-<meta-data
-  android:name="io.fabric.ApiKey"
-  android:value="xxx"
-  />
+* If you are making a **release** build, add your own [fabric](https://fabric.io)
+key to app/fabric.properties file like this:
+```
+#Contains API Secret used to validate your application. Commit to internal source control; avoid making secret public.
+#Tue Jan 10 11:18:34 MSK 2017
+apiSecret=cc4ffaxxxx0b91ax9fab11338d438xxxxe6f2f824xd4b60bbdxxxxa788bc629
+apiKey=f11xxx5261b4f4a1e4ecxx2493b41xxxx58a59
 ```

@@ -8,8 +8,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.support.v4.content.FileProvider;
 
 import java.io.File;
 
@@ -59,7 +61,13 @@ public class DownloadUpdateService extends Service {
                                 //open the downloaded file
                                 Intent install = new Intent(Intent.ACTION_VIEW);
                                 install.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                install.setDataAndType(downloadUri,
+                                Uri downloadUri2 = downloadUri;
+                                if (Build.VERSION.SDK_INT >= 24) {
+                                    downloadUri2 = FileProvider.getUriForFile(ctxt,
+                                            getApplicationContext().getPackageName() + ".provider",
+                                            newApkFile);
+                                }
+                                install.setDataAndType(downloadUri2,
                                         manager.getMimeTypeForDownloadedFile(startedDownloadId));
                                 ctxt.startActivity(install);
                             } else if (status == DownloadManager.STATUS_FAILED) {
