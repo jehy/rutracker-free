@@ -1,6 +1,8 @@
 #Rutracker-Free
 
 [![Build Status](https://travis-ci.org/jehy/rutracker-free.svg?branch=master)](https://travis-ci.org/jehy/rutracker-free)
+[![Github All Releases](https://img.shields.io/github/downloads/jehy/rutracker-free/total.svg)](https://github.com/jehy/rutracker-free/releases)
+[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/jehy/rutracker-free/master/License.md)
 
 Android thin client for rutracker.org.
 Version 9.0 implemented TOR
