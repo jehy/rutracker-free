@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     //public ShareActionProvider mShareActionProvider;
     private boolean updateChecked = false;
     private Menu optionsMenu;
+    private Intent shareIntent;
+    private Intent shareLinkIntent;
 
     public static Intent createUpdateDialogIntent(AppUpdate update) {
         Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
@@ -131,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onDestroy() {
-        super.onStop();
+        super.onDestroy();
         Log.d("Rutracker free", "onDestroy");
         /*if(onionProxyManager!=null)
             try {
@@ -200,15 +202,30 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void setShareIntent(final Intent shareIntent) {
+        this.shareIntent = shareIntent;
         MenuItem item = optionsMenu.findItem(R.id.menu_item_share);
         String msg = getResources().getString(R.string.action_share);
         setIntent(item, shareIntent, msg);
     }
 
     public void setShareLinkIntent(final Intent shareIntent) {
+        this.shareLinkIntent = shareIntent;
         MenuItem item = optionsMenu.findItem(R.id.menu_item_magnet);
         String msg = getResources().getString(R.string.action_share_magnet);
         setIntent(item, shareIntent, msg);
+    }
+
+    public void shareMagnet() {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (shareIntent == null) {
+                    return;
+                }
+                String msg = getResources().getString(R.string.action_share_magnet);
+                startActivity(Intent.createChooser(shareIntent, msg));
+            }
+        });
     }
 
     public void setIntent(final MenuItem item, final Intent shareIntent, final String title) {

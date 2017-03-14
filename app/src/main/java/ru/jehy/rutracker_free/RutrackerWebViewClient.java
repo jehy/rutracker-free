@@ -13,14 +13,30 @@ import android.webkit.WebViewClient;
 class RutrackerWebViewClient extends WebViewClient {
 
     private ProxyProcessor proxy = null;
+    private Context activityContext;
 
     public RutrackerWebViewClient(Context c) {
+        activityContext = c;
         proxy = new ProxyProcessor(c);
     }
 
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        view.loadUrl(url);
+        if (!url.startsWith("magnet:"))
+            view.loadUrl(url);
+        else
+            ((MainActivity) activityContext).shareMagnet();
+        return true;
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @Override
+    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+        if (!request.getUrl().toString().startsWith("magnet:"))
+            view.loadUrl(request.getUrl().toString());
+        else
+            ((MainActivity) activityContext).shareMagnet();
         return true;
     }
 
