@@ -1,5 +1,6 @@
 package ru.jehy.rutracker_free;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
@@ -7,7 +8,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -21,6 +25,7 @@ import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.core.CrashlyticsCore;
 
+import java.io.File;
 import java.io.IOException;
 
 import io.fabric.sdk.android.Fabric;
@@ -36,13 +41,15 @@ import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
-    public final static int PERMISSION_WRITE = 1;
+    public final static int PERMISSION_UPDATE_WRITE = 1;
+    public final static int PERMISSION_SAVE_FILE = 2;
     private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
     //public ShareActionProvider mShareActionProvider;
     private boolean updateChecked = false;
     private Menu optionsMenu;
     private Intent shareIntent;
     private Intent shareLinkIntent;
+    private String sharingFileName;
 
     public static Intent createUpdateDialogIntent(AppUpdate update) {
         Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
@@ -70,16 +77,29 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case PERMISSION_WRITE: {
+            case PERMISSION_UPDATE_WRITE: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    Log.v(TAG, "PERMISSION_WRITE granted for updater");
+                    Log.v(TAG, "PERMISSION_UPDATE_WRITE granted for updater");
                     AppUpdateUtil.startUpdate(this);
 
                 } else {
-                    Log.w(TAG, "PERMISSION_WRITE NOT granted for updater");
+                    Log.w(TAG, "PERMISSION_UPDATE_WRITE NOT granted for updater");
+                }
+            }
+            break;
+            case PERMISSION_SAVE_FILE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    Log.v(TAG, "PERMISSION_SAVE_FILE granted");
+                    this.shareFile(this.sharingFileName);
+
+                } else {
+                    Log.w(TAG, "PERMISSION_SAVE_FILE NOT granted");
                 }
             }
 
@@ -127,14 +147,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
-        Log.d("Rutracker free", "onPause");
+        Log.d(TAG, "onPause");
         showUpdateDialog.unregister(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d("Rutracker free", "onDestroy");
+        Log.d(TAG, "onDestroy");
         /*if(onionProxyManager!=null)
             try {
                 onionProxyManager.stop();
@@ -223,6 +243,44 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 String msg = getResources().getString(R.string.action_share_magnet);
+                startActivity(Intent.createChooser(shareIntent, msg));
+            }
+        });
+    }
+
+    public void shareFile(final String fileName) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (fileName == null) {
+                    return;
+                }
+                MainActivity.this.sharingFileName = fileName;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                            || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                        Log.w(TAG, "no permission to write external storage, requesting");
+                        String[] require = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+                        MainActivity.this.requestPermissions(require, PERMISSION_SAVE_FILE);
+                        return;
+                    }
+                }
+                File fileFrom = new File(MainActivity.this.getFilesDir(), fileName);
+                String downloadsPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
+                String fromPath = MainActivity.this.getFilesDir().getPath();
+                Utils.copyFile(fromPath+"/", fileName, downloadsPath+"/");
+                fileFrom.delete();
+                File fileDownloaded = new File(downloadsPath, fileName);
+                DownloadManager downloadManager = (DownloadManager) MainActivity.this.getSystemService(MainActivity.DOWNLOAD_SERVICE);
+                downloadManager.addCompletedDownload(fileDownloaded.getName(), fileDownloaded.getName(), true, "application/x-bittorrent", fileDownloaded.getAbsolutePath(), fileDownloaded.length(), true);
+
+                Log.d(TAG, "Sharing file");
+                String msg = getResources().getString(R.string.action_share_file);
+                Intent shareIntent = new Intent();
+                shareIntent.setAction(Intent.ACTION_SEND);
+                //File file = new File(MainActivity.this.getFilesDir(), fileName);
+                shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(fileDownloaded));
+                shareIntent.setType("application/x-bittorrent");
                 startActivity(Intent.createChooser(shareIntent, msg));
             }
         });

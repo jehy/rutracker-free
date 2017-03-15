@@ -5,4 +5,5 @@
     <string name="cancel" >Отмена</string>
     <string name="update_available">Доступно обновление</string>
     <string name="update">обновить</string>
+    <string name="action_share_file">Передать torrent файл</string>
 </resources>

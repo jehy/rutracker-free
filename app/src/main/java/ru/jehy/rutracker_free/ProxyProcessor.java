@@ -1,8 +1,10 @@
 package ru.jehy.rutracker_free;
 
+import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import android.util.Log;
 import android.webkit.WebResourceResponse;
 
@@ -10,6 +12,8 @@ import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -31,6 +35,7 @@ import cz.msebera.android.httpclient.impl.client.HttpClients;
 import cz.msebera.android.httpclient.impl.conn.PoolingHttpClientConnectionManager;
 import cz.msebera.android.httpclient.ssl.SSLContexts;
 
+import static android.content.Context.DOWNLOAD_SERVICE;
 import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
 
@@ -114,7 +119,7 @@ public class ProxyProcessor {
             }
 
             try {
-                response = executeRequest(requestUrl,headers,params);
+                response = executeRequest(requestUrl, headers, params);
             } catch (Exception e) {
                 return createExceptionError(e, url);
             }
@@ -160,6 +165,29 @@ public class ProxyProcessor {
                 Log.d(VIEW_TAG, "connection encoding : " + encoding);
                 String mime = response.getEntity().getContentType().getValue();
                 Log.d(VIEW_TAG, "mime full: " + mime);
+                if (mime.endsWith(".torrent\"")) {
+                    Log.d(VIEW_TAG, "We`ve got a torrent file");
+                    String[] arr = mime.split(";");
+                    mime = arr[0];
+                    arr = arr[1].split("=");
+                    String fileName = arr[1].replace("\"","");
+                    Log.d(VIEW_TAG, "file name from mime: " + fileName);
+                    File file = new File(context.getFilesDir(), fileName);
+
+                    FileOutputStream stream = new FileOutputStream(file);
+                    //stream.write(Utils.convertStreamToString(inputStream, null).getBytes());
+
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = input.read(buffer)) != -1)
+                    {
+                        stream.write(buffer, 0, bytesRead);
+                    }
+                    stream.close();
+
+                    ((MainActivity) this.context).shareFile(fileName);
+                    return null;
+                }
                 if (mime.contains(";")) {
                     String[] arr = mime.split(";");
                     mime = arr[0];
@@ -188,11 +216,11 @@ public class ProxyProcessor {
                     String data = Utils.convertStreamToString(inputStream, encoding);
 
                     String title;
-                    int start=data.indexOf("<title>");
-                    int end=data.indexOf("</title>",start);
-                    title=data.substring(start+7,end);
-                    if(title.length()!=0) {
-                        title=title.replace(" :: RuTracker.org","");
+                    int start = data.indexOf("<title>");
+                    int end = data.indexOf("</title>", start);
+                    title = data.substring(start + 7, end);
+                    if (title.length() != 0) {
+                        title = title.replace(" :: RuTracker.org", "");
                         Answers.getInstance().logContentView(new ContentViewEvent()//just for lulz
                                 .putContentName(title)
                                 .putContentType("page"));
@@ -236,14 +264,13 @@ public class ProxyProcessor {
                     mShareIntent.putExtra(Intent.EXTRA_TEXT, shareMsg);
                     ((MainActivity) this.context).setShareIntent(mShareIntent);
 
-                    if(link.length()>0) {
+                    if (link.length() > 0) {
                         Intent mShareLinkIntent = new Intent();
                         mShareLinkIntent.setAction(Intent.ACTION_SEND);
                         mShareLinkIntent.setType("text/plain");
                         mShareLinkIntent.putExtra(Intent.EXTRA_TEXT, "magnet:" + link);
                         ((MainActivity) this.context).setShareLinkIntent(mShareLinkIntent);
-                    }
-                    else
+                    } else
                         ((MainActivity) this.context).setShareLinkIntent(null);
 
                     //((MainActivity) context).invalidateOptionsMenu();
@@ -277,8 +304,9 @@ public class ProxyProcessor {
     }
 
     private HttpResponse executeRequest(Uri url, Map<String, String> headers, UrlEncodedFormEntity params) throws IOException {
-        return executeRequest(url.toString(),headers, params);
+        return executeRequest(url.toString(), headers, params);
     }
+
     private HttpResponse executeRequest(String url, Map<String, String> headers, UrlEncodedFormEntity params) throws IOException {
         HttpClient httpClient = getNewHttpClient();
         int port = onionProxyManager.getIPv4LocalHostSocksPort();
@@ -328,16 +356,16 @@ public class ProxyProcessor {
     }
 
     private WebResourceResponse createFromString(String buf) throws UnsupportedEncodingException {
-        return createFromString(buf,MIME_TEXT_HTML,ENCODING_UTF_8);
+        return createFromString(buf, MIME_TEXT_HTML, ENCODING_UTF_8);
     }
 
     private WebResourceResponse createFromString(String buf, String mime) throws UnsupportedEncodingException {
-        return createFromString(buf,mime,ENCODING_UTF_8);
+        return createFromString(buf, mime, ENCODING_UTF_8);
     }
 
     private WebResourceResponse createFromString(String buf, String mime, String encoding) throws UnsupportedEncodingException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(buf.getBytes(encoding));
-        return createFromString(mime,encoding,inputStream);
+        return createFromString(mime, encoding, inputStream);
     }
 
     private WebResourceResponse createFromString(String mime, String encoding, InputStream inputStream) throws UnsupportedEncodingException {
