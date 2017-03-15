@@ -20,10 +20,9 @@ class RutrackerWebViewClient extends WebViewClient {
         proxy = new ProxyProcessor(c);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-        //    return false;//avoid double work
         if (!url.startsWith("magnet:"))
             view.loadUrl(url);
         else if (url.contains("dl.php?t="))
@@ -57,10 +56,9 @@ class RutrackerWebViewClient extends WebViewClient {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            return null;//avoid double work
         WebResourceResponse response = proxy.getWebResourceResponse(Uri.parse(url), "GET", null);
         if (response == null) {
             return super.shouldInterceptRequest(view, url);
