@@ -22,8 +22,8 @@ class RutrackerWebViewClient extends WebViewClient {
 
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            return false;//avoid double work
+        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+        //    return false;//avoid double work
         if (!url.startsWith("magnet:"))
             view.loadUrl(url);
         else if (url.contains("dl.php?t="))
