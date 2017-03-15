@@ -1,4 +1,4 @@
-#Rutracker-Free
+# Rutracker-Free
 
 [![Build Status](https://travis-ci.org/jehy/rutracker-free.svg?branch=master)](https://travis-ci.org/jehy/rutracker-free)
 [![Github All Releases](https://img.shields.io/github/downloads/jehy/rutracker-free/total.svg)](https://github.com/jehy/rutracker-free/releases)
@@ -20,11 +20,11 @@ Rutracker-free on different resources:
 Old branch using Google compression proxy can be found
  [here.](https://github.com/jehy/rutracker-free/tree/old/GCP)
 
-#Requirements
+# Requirements
 To build project, you will need:
 * Android Studio 2.1+
 
-#Build instructions
+# Build instructions
 * If you are making a **release** build, add your own [fabric](https://fabric.io)
 key to app/fabric.properties file like this:
 ```

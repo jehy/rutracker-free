@@ -1,3 +1,6 @@
+/*Скрытие дурацкого огромного алерта*/
+.top-alert{display:none!important;}
+
 /*Скрытие рекламы*/
 
 div[style="padding: 5px 0 0;"], .sb2-bg2, #idx-sidebar2 > div:nth-child(4), #bn-bot-wrap, 

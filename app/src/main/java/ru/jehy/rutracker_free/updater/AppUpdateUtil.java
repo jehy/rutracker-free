@@ -137,7 +137,7 @@ public class AppUpdateUtil {
                                 context.requestPermissions(
                                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                                                 Manifest.permission.READ_EXTERNAL_STORAGE,},
-                                        MainActivity.PERMISSION_WRITE);
+                                        MainActivity.PERMISSION_UPDATE_WRITE);
                             } else {
                                 startUpdate(context, update.getAssetUrl());
                             }
