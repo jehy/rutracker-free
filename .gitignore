@@ -1,3 +1,6 @@
+#used only for local testing of tor library
+app/libs
+
 *.iml
 .gradle
 /local.properties
