@@ -28,7 +28,7 @@ repositories {
 }
 
 android {
-    /*flavorDimensions "default"
+    flavorDimensions "default"
 
     productFlavors {
         prod
@@ -36,7 +36,7 @@ android {
             // Disable fabric build ID generation for travis builds
             ext.enableCrashlytics = false
         }
-    }*/
+    }
     compileSdkVersion 27
     buildToolsVersion "27.0.3"
     defaultConfig {
