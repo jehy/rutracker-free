@@ -3,7 +3,7 @@ sudo: false
 android:
   components:
     - tools
-    - build-tools-25.0.2
+    - build-tools-27.0.3
     - platform-tools
     - extra-android-m2repository
     - extra-google-android-support
@@ -15,6 +15,7 @@ android:
     - android-21
     - android-22
     - android-25
+    - android-27
 
     # Additional components
 
@@ -24,6 +25,9 @@ android:
     - sys-img-armeabi-v7a-android-21
     - sys-img-armeabi-v7a-android-22
     - sys-img-armeabi-v7a-android-25
+    - sys-img-armeabi-v7a-android-27
+before_install:
+  - yes | sdkmanager "platforms;android-27"
 script:
   - ./gradlew  assembleTravisRelease
 jdk: oraclejdk8
