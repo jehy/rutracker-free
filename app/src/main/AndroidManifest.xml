@@ -14,7 +14,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-        tools:node="replace">
+        tools:node="replace"
+        tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name="ru.jehy.rutracker_free.MainActivity"
             android:configChanges="orientation|screenSize">

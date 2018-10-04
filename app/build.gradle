@@ -7,8 +7,8 @@ buildscript {
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
-        classpath 'io.fabric.tools:gradle:1.24.3'
+        classpath 'com.android.tools.build:gradle:3.2.0'
+        classpath 'io.fabric.tools:gradle:1.25.4'
     }
 }
 /*
@@ -40,14 +40,14 @@ android {
             ext.enableCrashlytics = false
         }
     }
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 16
-        targetSdkVersion 27
-        versionName '9.1.5'
-        versionCode 25
+        targetSdkVersion 28
+        versionName '9.1.6'
+        versionCode 26
     }
     buildTypes {
         release {
@@ -85,7 +85,7 @@ dependencies {
     //compile 'com.msopentech.thali.toronionproxy.android:ThaliOnionProxyAndroid-debug@aar'
     //compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:27.0.2'
+    compile 'com.android.support:appcompat-v7:28.0.0'
 
     compile "cz.msebera.android:httpclient:4.4.1.2"
     compile 'org.slf4j:slf4j-api:1.7.7'
