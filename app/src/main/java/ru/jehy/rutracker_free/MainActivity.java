@@ -189,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    if (loaded == null && onionProxyManager.isRunning())
+                    if (loaded == null && onionProxyManager!=null && onionProxyManager.isRunning())
                         MainActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
