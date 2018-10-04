@@ -87,10 +87,13 @@ public class TorProgressTask extends AsyncTask<String, String, Boolean> {
     @Override
     protected Boolean doInBackground(final String... args) {
         try {
+            while (onionProxyManager==null) {
+                Thread.sleep(90);
+            }
             if (onionProxyManager.isRunning()) {
                 return true;
             }
-        } catch (IOException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
         Thread torThread = new Thread() {
