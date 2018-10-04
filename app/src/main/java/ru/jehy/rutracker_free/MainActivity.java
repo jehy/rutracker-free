@@ -178,9 +178,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void initWebView() {
         /*
-        * That function looks damn bad. But we need to call onionProxyManager.isRunning from non UI thread
-        * and then we need to call myWebView.loadUrl from UI thread...
-        * */
+         * That function looks damn bad. But we need to call onionProxyManager.isRunning from non UI thread
+         * and then we need to call myWebView.loadUrl from UI thread...
+         * */
         final RutrackerWebView myWebView = (RutrackerWebView) MainActivity.this.findViewById(R.id.myWebView);
         final String loaded = myWebView.getOriginalUrl();
         final RutrackerApplication appState = ((RutrackerApplication) getApplicationContext());
@@ -188,17 +188,23 @@ public class MainActivity extends AppCompatActivity {
         Thread checkTorThread = new Thread() {
             @Override
             public void run() {
+
                 try {
-                    if (loaded == null && onionProxyManager!=null && onionProxyManager.isRunning())
-                        MainActivity.this.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                myWebView.loadUrl(appState.currentUrl);
-                            }
-                        });
-                } catch (IOException e) {
+                    while (onionProxyManager == null || !onionProxyManager.isRunning()) {
+                        Thread.sleep(90);
+                    }
+                } catch (InterruptedException | IOException e) {
                     e.printStackTrace();
                 }
+                if (loaded == null) {
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            myWebView.loadUrl(appState.currentUrl);
+                        }
+                    });
+                }
+
             }
         };
         checkTorThread.start();
@@ -268,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                 File fileFrom = new File(MainActivity.this.getFilesDir(), fileName);
                 String downloadsPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
                 String fromPath = MainActivity.this.getFilesDir().getPath();
-                Utils.copyFile(fromPath+"/", fileName, downloadsPath+"/");
+                Utils.copyFile(fromPath + "/", fileName, downloadsPath + "/");
                 fileFrom.delete();
                 File fileDownloaded = new File(downloadsPath, fileName);
                 DownloadManager downloadManager = (DownloadManager) MainActivity.this.getSystemService(MainActivity.DOWNLOAD_SERVICE);
