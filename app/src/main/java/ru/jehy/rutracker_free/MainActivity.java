@@ -24,15 +24,13 @@ import android.webkit.WebView;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.core.CrashlyticsCore;
+import com.github.javiersantos.appupdater.AppUpdater;
+import com.github.javiersantos.appupdater.enums.UpdateFrom;
 
 import java.io.File;
 import java.io.IOException;
 
 import io.fabric.sdk.android.Fabric;
-import ru.jehy.rutracker_free.updater.AppUpdate;
-import ru.jehy.rutracker_free.updater.AppUpdateUtil;
-import ru.jehy.rutracker_free.updater.DownloadUpdateService;
-import ru.jehy.rutracker_free.updater.UpdateBroadcastReceiver;
 
 import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
@@ -40,56 +38,18 @@ import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 @SuppressLint("SetJavaScriptEnabled")
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
-    public final static int PERMISSION_UPDATE_WRITE = 1;
     public final static int PERMISSION_SAVE_FILE = 2;
-    private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
     //public ShareActionProvider mShareActionProvider;
-    private boolean updateChecked = false;
     private Menu optionsMenu;
     private Intent shareIntent;
     private Intent shareLinkIntent;
     private String sharingFileName;
 
-    public static Intent createUpdateDialogIntent(AppUpdate update) {
-        Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
-        updateIntent.putExtra("update", update);
-        return updateIntent;
-    }
-
-
-    public static boolean isAppBeingUpdated(Context context) {
-
-        DownloadManager downloadManager = (DownloadManager) context.getSystemService(DOWNLOAD_SERVICE);
-        DownloadManager.Query q = new DownloadManager.Query();
-        q.setFilterByStatus(DownloadManager.STATUS_RUNNING);
-        Cursor c = downloadManager.query(q);
-        if (c.moveToFirst()) {
-            String fileName = c.getString(c.getColumnIndex(DownloadManager.COLUMN_TITLE));
-            if (fileName.equals(DownloadUpdateService.DOWNLOAD_UPDATE_TITLE)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case PERMISSION_UPDATE_WRITE: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED
-                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    Log.v(TAG, "PERMISSION_UPDATE_WRITE granted for updater");
-                    AppUpdateUtil.startUpdate(this);
-
-                } else {
-                    Log.w(TAG, "PERMISSION_UPDATE_WRITE NOT granted for updater");
-                }
-            }
-            break;
             case PERMISSION_SAVE_FILE: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
@@ -148,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause");
-        showUpdateDialog.unregister(this);
     }
 
     @Override
@@ -170,10 +129,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
-        showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
         new TorProgressTask(MainActivity.this).execute();
         initWebView();
-        checkUpdates();
+        AppUpdater appUpdater = new AppUpdater(this)
+                .setUpdateFrom(UpdateFrom.GITHUB)
+                .setGitHubUserAndRepo("jehy", "rutracker-free");
+        appUpdater.start();
     }
 
     public void initWebView() {
@@ -209,23 +170,6 @@ public class MainActivity extends AppCompatActivity {
         };
         checkTorThread.start();
     }
-
-    public void checkUpdates() {
-
-        if (updateChecked) {
-            return;
-        }
-        //first init
-        Thread updateThread = new Thread() {
-            @Override
-            public void run() {
-                AppUpdateUtil.checkForUpdate(MainActivity.this);
-                MainActivity.this.updateChecked = true;
-            }
-        };
-        updateThread.start();
-    }
-
 
     public void setShareIntent(final Intent shareIntent) {
         this.shareIntent = shareIntent;

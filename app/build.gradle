@@ -46,8 +46,8 @@ android {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 16
         targetSdkVersion 28
-        versionName '9.1.6'
-        versionCode 26
+        versionName '9.1.7'
+        versionCode 27
     }
     buildTypes {
         release {
@@ -79,6 +79,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.github.javiersantos:AppUpdater:2.7'
     compile 'com.github.jehy:Tor-Onion-Proxy-Library:0.0.7'
 
     //use local copy for test

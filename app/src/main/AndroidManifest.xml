@@ -25,9 +25,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service
-            android:name=".updater.DownloadUpdateService"
-            android:exported="false" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
