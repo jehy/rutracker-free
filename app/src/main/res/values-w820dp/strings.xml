@@ -1,14 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rutracker Free</string>
-    <string name="action_share">Отправить описание и ссылку</string>
-    <string name="action_share_magnet">Отправить magnet ссылку</string>
-    <string name="cancel" >Отмена</string>
-    <string name="update_available">Доступно обновление</string>
-    <string name="update">обновить</string>
-    <string name="action_share_file">Передать torrent файл</string>
     <string name="share_with_message">Отправить торрент</string>
     <string name="open_with_message">Открыть торрент</string>
-    <string name="torrent_loaded_channel">Оповещение о загруженных торрентах</string>
     <string name="torrent_loaded_reminder">Информация о загруженных торрент-файлах</string>
     <string name="action_download_torrent">Загрузить торрент-файл</string>
     <string name="torrent_loading_dialog_message">Загружаю торрент файл</string>

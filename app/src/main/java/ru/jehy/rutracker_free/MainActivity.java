@@ -3,6 +3,7 @@ package ru.jehy.rutracker_free;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -13,13 +14,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
+import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
@@ -38,18 +41,106 @@ import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
 
 @SuppressLint("SetJavaScriptEnabled")
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
     private static final String TAG = "MainActivity";
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
+    static final String TORRENT_LOAD_ACTION = "ru.jehy.rutracker_free..action.BOOK_LOAD_EVENT";
     public final static int PERMISSION_UPDATE_WRITE = 1;
     public final static int PERMISSION_SAVE_FILE = 2;
+     static final int START_TORRENT_LOADING = 1;
+     static final int FINISH_TORRENT_LOADING = 2;
+    static final String TORRENT_LOAD_EVENT = "book load event";
     private final UpdateBroadcastReceiver showUpdateDialog = new UpdateBroadcastReceiver();
+    public String mMangetLink = null;
     //public ShareActionProvider mShareActionProvider;
     private boolean updateChecked = false;
     private Menu optionsMenu;
     private Intent shareIntent;
-    private Intent shareLinkIntent;
     private String sharingFileName;
+    private SwipeRefreshLayout mRefresher;
+    private WebView mWebView;
+    private String mTorrentUrl;
+    public String mTorrentName = "noname";
+    private boolean mShowDownloadIcon = false;
+    private boolean mShowMagnetIcon = false;
+    private AlertDialog mTorrentLoadingDialog;
+    private TorrentLoadingReceiver mTorrentLoadReceiver;
+    private boolean mShowLoginIcon;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        setContentView(R.layout.activity_main);
+
+        super.onCreate(savedInstanceState);
+        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
+                .disabled(BuildConfig.DEBUG)
+                .build();
+
+        Crashlytics crashlytics = new Crashlytics.Builder()
+                .core(crashlyticsCore)
+                .build();
+
+        Answers answers = new Answers();
+
+        Fabric fabric = new Fabric.Builder(this)
+                .kits(crashlytics, answers)
+                .build();
+
+        Fabric.with(fabric);
+
+        // добавлю модный перезагрузчик страницы
+        mRefresher = findViewById(R.id.refreshView);
+        mRefresher.setOnRefreshListener(this);
+
+        // проверю, не запущено ли приложение с помощью интента, если да- перейду на присланную страницу
+        if(getIntent().getData()!=null){
+            Uri data = getIntent().getData();
+            RutrackerApplication.getInstance().currentUrl = data.toString();
+        }
+
+        // зарегистрирую получатель команды возвращения на предыдущую страницу
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(TORRENT_LOAD_ACTION);
+        mTorrentLoadReceiver = new TorrentLoadingReceiver();
+        registerReceiver(mTorrentLoadReceiver, filter);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
+        new TorProgressTask(MainActivity.this).execute();
+        initWebView();
+        checkUpdates();
+    }
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        showUpdateDialog.unregister(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mTorrentLoadReceiver);
+        /*if(onionProxyManager!=null)
+            try {
+                onionProxyManager.stop();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }*/
+    }
+
+
+    @Override
+    public void onRefresh() {
+        //mWebView.reload();
+        mRefresher.setRefreshing(false);
+    }
 
     public static Intent createUpdateDialogIntent(AppUpdate update) {
         Intent updateIntent = new Intent(MainActivity.ACTION_SHOW_UPDATE_DIALOG);
@@ -66,16 +157,14 @@ public class MainActivity extends AppCompatActivity {
         Cursor c = downloadManager.query(q);
         if (c.moveToFirst()) {
             String fileName = c.getString(c.getColumnIndex(DownloadManager.COLUMN_TITLE));
-            if (fileName.equals(DownloadUpdateService.DOWNLOAD_UPDATE_TITLE)) {
-                return true;
-            }
+            return fileName.equals(DownloadUpdateService.DOWNLOAD_UPDATE_TITLE);
         }
         return false;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case PERMISSION_UPDATE_WRITE: {
                 // If request is cancelled, the result arrays are empty.
@@ -113,76 +202,65 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.actionbar, menu);
         optionsMenu = menu;
-        MenuItem item = menu.findItem(R.id.menu_item_share);
-        item.setVisible(false);
-        item = menu.findItem(R.id.menu_item_magnet);
-        item.setVisible(false);
+        menu.findItem(R.id.menu_item_download).setVisible(mShowDownloadIcon);
+        menu.findItem(R.id.menu_item_magnet).setVisible(mShowMagnetIcon);
+        menu.findItem(R.id.menu_item_login).setVisible(mShowLoginIcon);
         //mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
         //this.invalidateOptionsMenu();
         return true;
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG, "OnCreate");
-        CrashlyticsCore crashlyticsCore = new CrashlyticsCore.Builder()
-                .disabled(BuildConfig.DEBUG)
-                .build();
-
-        Crashlytics crashlytics = new Crashlytics.Builder()
-                .core(crashlyticsCore)
-                .build();
-
-        Answers answers = new Answers();
-
-        Fabric fabric = new Fabric.Builder(this)
-                .kits(crashlytics, answers)
-                .build();
-
-        Fabric.with(fabric);
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.menu_item_download:
+                downloadTorrent();
+                return true;
+            case R.id.menu_item_share:
+                // отправлю ссылку на данную страницу
+                shareCurrentPage();
+                return true;
+            case R.id.menu_item_magnet:
+                shareMagnetLink();
+                return true;
+            case R.id.menu_item_login:
+                loginToRutracker();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        Log.d(TAG, "onPause");
-        showUpdateDialog.unregister(this);
+    private void loginToRutracker() {
+        Toast.makeText(this, "В разработке", Toast.LENGTH_LONG).show();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy");
-        /*if(onionProxyManager!=null)
-            try {
-                onionProxyManager.stop();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
+    private void shareMagnetLink() {
+        String shareMsg = mMangetLink;
+        Log.d("surprise", "MainActivity shareMagnetLink: link is " + mMangetLink);
+        Intent mShareIntent = new Intent();
+        mShareIntent.setAction(Intent.ACTION_SEND);
+        mShareIntent.setType("text/plain");
+        mShareIntent.putExtra(Intent.EXTRA_TEXT, shareMsg);
+        startActivity(Intent.createChooser(mShareIntent, getString(R.string.action_share_magnet)));
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        Log.d(TAG, "onResume");
-        setContentView(R.layout.activity_main);
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
-        showUpdateDialog.register(this, new IntentFilter(ACTION_SHOW_UPDATE_DIALOG));
-        new TorProgressTask(MainActivity.this).execute();
-        initWebView();
-        checkUpdates();
+    private void shareCurrentPage() {
+        String shareMsg = "Посмотри, что я нашёл на рутрекере при помощи приложения rutracker free: \n" + RutrackerApplication.getInstance().currentUrl;
+        Intent mShareIntent = new Intent();
+        mShareIntent.setAction(Intent.ACTION_SEND);
+        mShareIntent.setType("text/plain");
+        mShareIntent.putExtra(Intent.EXTRA_TEXT, shareMsg);
+        startActivity(Intent.createChooser(mShareIntent, getString(R.string.action_share)));
     }
+
 
     public void initWebView() {
         /*
          * That function looks damn bad. But we need to call onionProxyManager.isRunning from non UI thread
          * and then we need to call myWebView.loadUrl from UI thread...
          * */
-        final RutrackerWebView myWebView = (RutrackerWebView) MainActivity.this.findViewById(R.id.myWebView);
-        final String loaded = myWebView.getOriginalUrl();
+        mWebView = MainActivity.this.findViewById(R.id.myWebView);
+        final String loaded = mWebView.getOriginalUrl();
         final RutrackerApplication appState = ((RutrackerApplication) getApplicationContext());
 
         Thread checkTorThread = new Thread() {
@@ -200,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            myWebView.loadUrl(appState.currentUrl);
+                            mWebView.loadUrl(appState.currentUrl);
                         }
                     });
                 }
@@ -235,7 +313,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setShareLinkIntent(final Intent shareIntent) {
-        this.shareLinkIntent = shareIntent;
         MenuItem item = optionsMenu.findItem(R.id.menu_item_magnet);
         String msg = getResources().getString(R.string.action_share_magnet);
         setIntent(item, shareIntent, msg);
@@ -275,7 +352,10 @@ public class MainActivity extends AppCompatActivity {
                 String downloadsPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath();
                 String fromPath = MainActivity.this.getFilesDir().getPath();
                 Utils.copyFile(fromPath + "/", fileName, downloadsPath + "/");
-                fileFrom.delete();
+                boolean result = fileFrom.delete();
+                if (!result) {
+                    Log.d("surprise", "MainActivity run: delete error");
+                }
                 File fileDownloaded = new File(downloadsPath, fileName);
                 DownloadManager downloadManager = (DownloadManager) MainActivity.this.getSystemService(MainActivity.DOWNLOAD_SERVICE);
                 downloadManager.addCompletedDownload(fileDownloaded.getName(), fileDownloaded.getName(), true, "application/x-bittorrent", fileDownloaded.getAbsolutePath(), fileDownloaded.length(), true);
@@ -297,10 +377,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 if (shareIntent == null) {
-                    item.setVisible(false);
                     return;
                 }
-                item.setVisible(true);
                 item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem menuItem) {
@@ -315,20 +393,104 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_BACK:
-                    WebView myWebView = (WebView) findViewById(R.id.myWebView);
-                    assert myWebView != null;
-                    if (myWebView.canGoBack()) {
-                        myWebView.goBack();
-                    } else {
-                        finish();
-                    }
-                    return true;
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                WebView myWebView = findViewById(R.id.myWebView);
+                assert myWebView != null;
+                if (myWebView.canGoBack()) {
+                    myWebView.goBack();
+                } else {
+                    finish();
+                }
+                return true;
             }
 
         }
         return super.onKeyDown(keyCode, event);
     }
+
+    private void downloadTorrent() {
+        // получу разрешения на доступ к файловой системе
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    || checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "no permission to write external storage, requesting");
+                String[] require = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+                MainActivity.this.requestPermissions(require, PERMISSION_SAVE_FILE);
+                return;
+            }
+        }
+        // попробую просто заставить webview подгрузить торрент по ссылке
+        mWebView.loadUrl(Rutracker.BASE_URL + mTorrentUrl);
+    }
+
+    public void setDownloadTorrentActive(String torrentUrl, String torrentName) {
+        mTorrentUrl = torrentUrl;
+        mTorrentName = torrentName;
+        mShowDownloadIcon = true;
+        supportInvalidateOptionsMenu();
+    }
+    public void showMagnetIcon() {
+        mShowMagnetIcon = true;
+        supportInvalidateOptionsMenu();
+    }
+
+    public void hideDownloadIcon() {
+        mShowDownloadIcon = false;
+        supportInvalidateOptionsMenu();
+    }
+
+    public void hideMagnetIcon() {
+        mShowMagnetIcon = false;
+        supportInvalidateOptionsMenu();
+    }
+
+
+    public void showLoginIcon() {
+        mShowLoginIcon = true;
+        supportInvalidateOptionsMenu();
+
+    }
+
+    public void hideLoginIcon() {
+
+        mShowLoginIcon = false;
+        supportInvalidateOptionsMenu();
+    }
+
+    private void showTorrentLoadingDialog() {
+        if (mTorrentLoadingDialog == null) {
+            // создам диалоговое окно
+            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+            dialogBuilder.setTitle(R.string.torrent_loading_dialog_title)
+                    .setView(R.layout.torrent_loading_dialog_layout)
+                    .setCancelable(false);
+            mTorrentLoadingDialog = dialogBuilder.create();
+        }
+        mTorrentLoadingDialog.show();
+    }
+
+    private void hideTorrentLoadingDialog() {
+        if (mTorrentLoadingDialog != null) {
+            mTorrentLoadingDialog.hide();
+        }
+    }
+
+
+    public class TorrentLoadingReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int action = intent.getIntExtra(TORRENT_LOAD_EVENT, 0);
+            switch (action) {
+                case START_TORRENT_LOADING:
+                    showTorrentLoadingDialog();
+                    break;
+                case FINISH_TORRENT_LOADING:
+                    mWebView.loadUrl(RutrackerApplication.getInstance().currentUrl);
+                default:
+                    hideTorrentLoadingDialog();
+            }
+        }
+    }
+
 }
 

@@ -1,7 +1,7 @@
 package ru.jehy.rutracker_free;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -31,6 +31,7 @@ public class RutrackerWebView extends WebView {
         setUpWebView();
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     public void setUpWebView() {
         if (this.isInEditMode()) {
             return;
@@ -53,7 +54,7 @@ public class RutrackerWebView extends WebView {
             return;
         }
         init = true;
-        final ProgressBar progressBar = (ProgressBar) ((MainActivity) getContext()).findViewById(R.id.progressBar);
+        final ProgressBar progressBar = ((MainActivity) getContext()).findViewById(R.id.progressBar);
         this.setWebChromeClient(new WebChromeClient() {
             public void onProgressChanged(WebView view, int progress) {
                 if (progress > 80) {
@@ -74,7 +75,6 @@ public class RutrackerWebView extends WebView {
     public void loadUrl(String url) {
         super.loadUrl(url);
         RutrackerApplication appState = ((RutrackerApplication) getContext().getApplicationContext());
-        appState.currentUrl = url;
         initProgressBar();
     }
 

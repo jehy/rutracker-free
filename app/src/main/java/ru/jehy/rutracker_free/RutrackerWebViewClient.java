@@ -12,15 +12,14 @@ import android.webkit.WebViewClient;
 
 class RutrackerWebViewClient extends WebViewClient {
 
-    private ProxyProcessor proxy = null;
+    private ProxyProcessor proxy;
     private Context activityContext;
 
-    public RutrackerWebViewClient(Context c) {
+     RutrackerWebViewClient(Context c) {
         activityContext = c;
         proxy = new ProxyProcessor(c);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         if (!url.startsWith("magnet:"))
@@ -56,7 +55,13 @@ class RutrackerWebViewClient extends WebViewClient {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public void onPageFinished(WebView view, String url) {
+        super.onPageFinished(view, url);
+        if(!ProxyProcessor.isTorrent)
+            RutrackerApplication.getInstance().currentUrl = url;
+    }
+
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
         WebResourceResponse response = proxy.getWebResourceResponse(Uri.parse(url), "GET", null);

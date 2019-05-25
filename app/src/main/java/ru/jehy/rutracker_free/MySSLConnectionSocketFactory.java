@@ -22,12 +22,12 @@ import cz.msebera.android.httpclient.util.Args;
 
 public class MySSLConnectionSocketFactory extends SSLConnectionSocketFactory {
 
-    public MySSLConnectionSocketFactory(final SSLContext sslContext) {
+     MySSLConnectionSocketFactory(final SSLContext sslContext) {
         super(sslContext);
     }
 
     @Override
-    public Socket createSocket(final HttpContext context) throws IOException {
+    public Socket createSocket(final HttpContext context) {
         return new Socket();
     }
 

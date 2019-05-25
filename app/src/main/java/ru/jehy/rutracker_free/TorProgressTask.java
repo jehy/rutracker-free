@@ -16,7 +16,7 @@ public class TorProgressTask extends AsyncTask<String, String, Boolean> {
     private ProgressDialog torStartProgress;
     private MainActivity activity;
 
-    public TorProgressTask(MainActivity activity) {
+     TorProgressTask(MainActivity activity) {
         this.activity = activity;
     }
 
@@ -59,7 +59,7 @@ public class TorProgressTask extends AsyncTask<String, String, Boolean> {
             AlertDialog alert11 = builder1.create();
             alert11.show();
         }
-        RutrackerWebView myWebView = (RutrackerWebView) activity.findViewById(R.id.myWebView);
+        RutrackerWebView myWebView = activity.findViewById(R.id.myWebView);
         RutrackerApplication appState = ((RutrackerApplication) activity.getApplicationContext());
         myWebView.loadUrl(appState.currentUrl);
         Log.d(TAG, "Opening: " + appState.currentUrl);
