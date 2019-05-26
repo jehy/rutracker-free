@@ -7,4 +7,6 @@
     <string name="torrent_loading_dialog_message">Загружаю торрент файл</string>
     <string name="torrent_loading_dialog_title">Загружаю торрент.</string>
     <string name="login_message">Войти в учётную запись</string>
+    <string name="name_hint">Введите логин</string>
+    <string name="pass_hint">Введите пароль</string>
 </resources>

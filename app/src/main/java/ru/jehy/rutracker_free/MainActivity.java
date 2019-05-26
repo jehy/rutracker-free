@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -14,15 +15,19 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TextInputEditText;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
+import android.text.Editable;
+import android.text.InputType;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.WebView;
-import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
@@ -30,6 +35,8 @@ import com.crashlytics.android.core.CrashlyticsCore;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import io.fabric.sdk.android.Fabric;
 import ru.jehy.rutracker_free.updater.AppUpdate;
@@ -41,7 +48,7 @@ import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
 
 @SuppressLint("SetJavaScriptEnabled")
-public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, SwipeRefreshLayout.OnRefreshListener {
     private static final String TAG = "MainActivity";
     public static final String ACTION_SHOW_UPDATE_DIALOG = "ru.jehy.rutracker_free.SHOW_UPDATE_DIALOG";
     static final String TORRENT_LOAD_ACTION = "ru.jehy.rutracker_free..action.BOOK_LOAD_EVENT";
@@ -54,7 +61,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public String mMangetLink = null;
     //public ShareActionProvider mShareActionProvider;
     private boolean updateChecked = false;
-    private Menu optionsMenu;
     private Intent shareIntent;
     private String sharingFileName;
     private SwipeRefreshLayout mRefresher;
@@ -66,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private AlertDialog mTorrentLoadingDialog;
     private TorrentLoadingReceiver mTorrentLoadReceiver;
     private boolean mShowLoginIcon;
+    private SearchView mSearchView;
 
 
     @Override
@@ -201,10 +208,20 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.actionbar, menu);
-        optionsMenu = menu;
         menu.findItem(R.id.menu_item_download).setVisible(mShowDownloadIcon);
         menu.findItem(R.id.menu_item_magnet).setVisible(mShowMagnetIcon);
         menu.findItem(R.id.menu_item_login).setVisible(mShowLoginIcon);
+
+        // добавлю обработку поиска
+        MenuItem searchMenuItem = menu.findItem(R.id.action_search);
+        mSearchView = (SearchView) searchMenuItem.getActionView();
+        if(mSearchView != null){
+            mSearchView.setInputType(InputType.TYPE_CLASS_TEXT);
+            mSearchView.setOnQueryTextListener(this);
+        }
+        else{
+            Log.d("surprise", "MainActivity onCreateOptionsMenu: search view null");
+        }
         //mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
         //this.invalidateOptionsMenu();
         return true;
@@ -231,7 +248,37 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
     private void loginToRutracker() {
-        Toast.makeText(this, "В разработке", Toast.LENGTH_LONG).show();
+        android.app.AlertDialog.Builder ad = new android.app.AlertDialog.Builder(this);
+        final View view = getLayoutInflater().inflate(R.layout.login_dialog_layout, null);
+        final TextInputEditText login = view.findViewById(R.id.loginInput);
+        final TextInputEditText password = view.findViewById(R.id.passInput);
+
+        ad.setTitle(MainActivity.this.getString(R.string.login_dialog_title));
+        ad.setView(view);
+        ad.setNegativeButton(android.R.string.cancel, null);
+        ad.setPositiveButton("Войти", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // попробую отправить форму входа
+                Editable loginData = login.getText();
+                String loginText = "";
+                String passText = "";
+                if(loginData != null){
+                    loginText = loginData.toString();
+                }
+                Editable passData = password.getText();
+                if(passData != null){
+                    passText = passData.toString();
+                }
+                try {
+                    String url = "https://rutracker.org/forum/login.php?convert_post=1" + "&login_username=" + URLEncoder.encode(loginText, "windows-1251") + "&login_password=" + URLEncoder.encode(passText, "windows-1251") + "&login=" + URLEncoder.encode("вход", "windows-1251");
+                    mWebView.loadUrl(url);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        ad.create().show();
     }
 
     private void shareMagnetLink() {
@@ -304,20 +351,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         updateThread.start();
     }
 
-
-    public void setShareIntent(final Intent shareIntent) {
-        this.shareIntent = shareIntent;
-        MenuItem item = optionsMenu.findItem(R.id.menu_item_share);
-        String msg = getResources().getString(R.string.action_share);
-        setIntent(item, shareIntent, msg);
-    }
-
-    public void setShareLinkIntent(final Intent shareIntent) {
-        MenuItem item = optionsMenu.findItem(R.id.menu_item_magnet);
-        String msg = getResources().getString(R.string.action_share_magnet);
-        setIntent(item, shareIntent, msg);
-    }
-
     public void shareMagnet() {
         this.runOnUiThread(new Runnable() {
             @Override
@@ -368,24 +401,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(fileDownloaded));
                 shareIntent.setType("application/x-bittorrent");
                 startActivity(Intent.createChooser(shareIntent, msg));
-            }
-        });
-    }
-
-    public void setIntent(final MenuItem item, final Intent shareIntent, final String title) {
-        this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (shareIntent == null) {
-                    return;
-                }
-                item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem menuItem) {
-                        startActivity(Intent.createChooser(shareIntent, title));
-                        return false;
-                    }
-                });
             }
         });
     }
@@ -473,6 +488,26 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         if (mTorrentLoadingDialog != null) {
             mTorrentLoadingDialog.hide();
         }
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String s) {
+        mSearchView.setIconified(true);
+        invalidateOptionsMenu();
+        Log.d("surprise", "MainActivity onQueryTextSubmit: make search");
+        try {
+            String url = "https://rutracker.org/forum/tracker.php?convert_post=1" + "&nm=" + URLEncoder.encode(s, "windows-1251");
+            mWebView.loadUrl(url);
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String s) {
+        return false;
     }
 
 

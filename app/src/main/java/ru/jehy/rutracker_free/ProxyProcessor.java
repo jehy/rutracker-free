@@ -112,6 +112,7 @@ class ProxyProcessor {
             String requestUrl = url.toString();
 
             if (url.toString().contains("convert_post=1") || method.equals("post")) {
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: emulate post");
                 //we need to emulate POST request
                 Log.d(VIEW_TAG, "It is a post request!");
                 int queryPart = requestUrl.indexOf("?");
@@ -123,6 +124,7 @@ class ProxyProcessor {
 
             try {
                 response = executeRequest(requestUrl, headers, params);
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: response code " + response.getStatusLine().getStatusCode());
             } catch (Exception e) {
                 return createExceptionError(e, url);
             }
@@ -160,12 +162,14 @@ class ProxyProcessor {
             isTorrent = false;
 
             if (Rutracker.isLoginForm(url)) {
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: have login form");
                 Header[] all = response.getAllHeaders();
                 for (Header header1 : all) {
                     Log.d(VIEW_TAG, "LOGIN HEADER: " + header1.getName() + " : " + header1.getValue());
                 }
                 Header[] cookies = response.getHeaders("set-cookie");
                 if (cookies.length > 0) {
+                    Log.d("surprise", "ProxyProcessor getWebResourceResponse: receive authorization cookie");
                     String value = cookies[0].getValue();
                     value = value.substring(0, value.indexOf(";"));
                     String authCookie = value.trim();
@@ -325,7 +329,12 @@ class ProxyProcessor {
 
                 }
                 return createFromString(mime, encoding, inputStream);
-            } else {
+            }
+            else if(responseCode == 302){
+                // перенаправлю на нужный адрес
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: " + headers.get("Location"));
+            }
+            else {
                 return createResponseError(responseMessage, url.toString(), String.valueOf(responseCode));
             }
         } catch (Exception e) {
