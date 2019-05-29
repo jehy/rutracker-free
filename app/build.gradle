@@ -46,8 +46,8 @@ android {
         applicationId "ru.jehy.rutracker_free"
         minSdkVersion 16
         targetSdkVersion 28
-        versionName '9.1.6'
-        versionCode 26
+        versionName '9.2.0'
+        versionCode 27
     }
     buildTypes {
         release {
