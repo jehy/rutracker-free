@@ -1,6 +1,5 @@
 package ru.jehy.rutracker_free;
 
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -34,29 +33,33 @@ import cz.msebera.android.httpclient.conn.socket.ConnectionSocketFactory;
 import cz.msebera.android.httpclient.impl.client.HttpClients;
 import cz.msebera.android.httpclient.impl.conn.PoolingHttpClientConnectionManager;
 import cz.msebera.android.httpclient.ssl.SSLContexts;
+import ru.jehy.rutracker_free.receivers.TorrentLoadedReceiver;
 
-import static android.content.Context.DOWNLOAD_SERVICE;
+import static ru.jehy.rutracker_free.MainActivity.FINISH_TORRENT_LOADING;
 import static ru.jehy.rutracker_free.RutrackerApplication.onionProxyManager;
 
 
 /**
  * Created by jehy on 2016-03-31.
  */
-public class ProxyProcessor {
+class ProxyProcessor {
 
+    private static final String LOGGED_IN_MARKER = "<a id=\"logged-in-username\"";
+    static boolean isTorrent = false;
     private static final String VIEW_TAG = "RutrackerWebView";
     private static final String MIME_TEXT_HTML = "text/html";
     private static final String MIME_TEXT_CSS = "text/css";
     private static final String ENCODING_UTF_8 = "UTF-8";
     private static final String ENCODING_WINDOWS_1251 = "WINDOWS-1251";
+    private static final String DL_LINK = "dl.php?t=";
     private final Context context;
 
-    public ProxyProcessor(Context context) {
+    ProxyProcessor(Context context) {
         this.context = context;
     }
 
 
-    public HttpClient getNewHttpClient() {
+    private HttpClient getNewHttpClient() {
 
         Registry<ConnectionSocketFactory> reg = RegistryBuilder.<ConnectionSocketFactory>create()
                 .register("http", new MyConnectionSocketFactory())
@@ -68,7 +71,7 @@ public class ProxyProcessor {
                 .build();
     }
 
-    public WebResourceResponse getWebResourceResponse(Uri url, String method, Map<String, String> headers) {
+    WebResourceResponse getWebResourceResponse(Uri url, String method, Map<String, String> headers) {
 
         Log.d(VIEW_TAG, "Request for url: " + url + " intercepted");
 
@@ -87,7 +90,7 @@ public class ProxyProcessor {
             return new WebResourceResponse("text/javascript", ENCODING_UTF_8, null);
         }
 
-        if (url.getPath().equals("/custom.css")) {
+        if (url.getPath() != null && url.getPath().equals("/custom.css")) {
             Log.d(VIEW_TAG, "Adding custom css file...");
             try {
                 return new WebResourceResponse(MIME_TEXT_CSS, ENCODING_UTF_8, (context).getAssets().open("rutracker.css"));
@@ -97,7 +100,7 @@ public class ProxyProcessor {
             }
         }
 
-        if (url.getPath().contains("logout.php")) {
+        if (url.getPath() != null && url.getPath().contains("logout.php")) {
             CookieManager.clear(context);
             url = Uri.parse(Rutracker.MAIN_URL);
         }
@@ -109,6 +112,7 @@ public class ProxyProcessor {
             String requestUrl = url.toString();
 
             if (url.toString().contains("convert_post=1") || method.equals("post")) {
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: emulate post");
                 //we need to emulate POST request
                 Log.d(VIEW_TAG, "It is a post request!");
                 int queryPart = requestUrl.indexOf("?");
@@ -124,13 +128,47 @@ public class ProxyProcessor {
                 return createExceptionError(e, url);
             }
 
+            if (url.toString().contains(DL_LINK)) {
+                // начинаю загружать торрент, пошлю оповещение о начале загрузки
+                Intent startLoadingIntent = new Intent(MainActivity.TORRENT_LOAD_ACTION);
+                startLoadingIntent.putExtra(MainActivity.TORRENT_LOAD_EVENT, MainActivity.START_TORRENT_LOADING);
+                context.sendBroadcast(startLoadingIntent);
+                String fileName = ((MainActivity) this.context).mTorrentName;
+                // сохраняю файл в памяти устройства
+                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName + ".torrent");
+                InputStream is = response.getEntity().getContent();
+                FileOutputStream outputStream = new FileOutputStream(file);
+                int read;
+                byte[] buffer = new byte[1024];
+                while ((read = is.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, read);
+                }
+                outputStream.close();
+                is.close();
+                // отправлю оповещение об окончании загрузки страницы
+                Intent finishLoadingIntent = new Intent(MainActivity.TORRENT_LOAD_ACTION);
+                finishLoadingIntent.putExtra(MainActivity.TORRENT_LOAD_EVENT, FINISH_TORRENT_LOADING);
+                context.sendBroadcast(finishLoadingIntent);
+                // отправлю сообщение о скачанном файле через broadcastReceiver
+                Intent intent = new Intent(context, TorrentLoadedReceiver.class);
+                intent.putExtra(TorrentLoadedReceiver.EXTRA_TORRENT_NAME, fileName + ".torrent");
+                context.sendBroadcast(intent);
+                String message = "<H1 style='text-align:center;'>Торрент скачан. Возвращаюсь на предыдущую страницу</H1>";
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(message.getBytes(ENCODING_UTF_8));
+                isTorrent = true;
+                return new WebResourceResponse("text/html", ENCODING_UTF_8, inputStream);
+            }
+            isTorrent = false;
+
             if (Rutracker.isLoginForm(url)) {
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: have login form");
                 Header[] all = response.getAllHeaders();
                 for (Header header1 : all) {
                     Log.d(VIEW_TAG, "LOGIN HEADER: " + header1.getName() + " : " + header1.getValue());
                 }
                 Header[] cookies = response.getHeaders("set-cookie");
                 if (cookies.length > 0) {
+                    Log.d("surprise", "ProxyProcessor getWebResourceResponse: receive authorization cookie");
                     String value = cookies[0].getValue();
                     value = value.substring(0, value.indexOf(";"));
                     String authCookie = value.trim();
@@ -168,9 +206,8 @@ public class ProxyProcessor {
                 if (mime.endsWith(".torrent\"")) {
                     Log.d(VIEW_TAG, "We`ve got a torrent file");
                     String[] arr = mime.split(";");
-                    mime = arr[0];
                     arr = arr[1].split("=");
-                    String fileName = arr[1].replace("\"","");
+                    String fileName = arr[1].replace("\"", "");
                     Log.d(VIEW_TAG, "file name from mime: " + fileName);
                     File file = new File(context.getFilesDir(), fileName);
 
@@ -179,8 +216,7 @@ public class ProxyProcessor {
 
                     byte[] buffer = new byte[1024];
                     int bytesRead;
-                    while ((bytesRead = input.read(buffer)) != -1)
-                    {
+                    while ((bytesRead = input.read(buffer)) != -1) {
                         stream.write(buffer, 0, bytesRead);
                     }
                     stream.close();
@@ -238,6 +274,13 @@ public class ProxyProcessor {
                     data = data.replace("<a href=\"#\" onclick=\"return post2url('login.php', {logout: 1});\">Выход</a>",
                             "<a href=\"logout.php\">Выход</a>");
 
+                    if (data.contains(LOGGED_IN_MARKER)) {
+                        ((MainActivity) this.context).hideLoginIcon();
+                    } else {
+                        ((MainActivity) this.context).showLoginIcon();
+                    }
+                    checkPageForTorrent(data);
+
                     inputStream = new ByteArrayInputStream(data.getBytes(encoding));
                     //Log.d(VIEW_TAG, "data " + data);
                     String shareUrl = url.toString();
@@ -245,38 +288,28 @@ public class ProxyProcessor {
                     if (start != -1) {
                         shareUrl = shareUrl.substring(0, start);
                     }
-                    String shareMsg = "Посмотри, что я нашёл на рутрекере при помощи приложения rutracker free: \n";
-                    if (title.length() != 0) {
-                        shareMsg += title + "\n";
-                    }
-                    shareMsg += shareUrl;
                     start = data.indexOf("href=\"magnet:");
                     String link = "";
                     if (start != -1) {
+                        Log.d("surprise", "ProxyProcessor getWebResourceResponse: magnet found");
                         start += 13;
                         end = data.indexOf("\"", start);
                         link = data.substring(start, end);
-                        shareMsg += "\n\nMagnet ссылка на скачивание:\nmagnet:" + link;
                     }
-                    Intent mShareIntent = new Intent();
-                    mShareIntent.setAction(Intent.ACTION_SEND);
-                    mShareIntent.setType("text/plain");
-                    mShareIntent.putExtra(Intent.EXTRA_TEXT, shareMsg);
-                    ((MainActivity) this.context).setShareIntent(mShareIntent);
-
                     if (link.length() > 0) {
-                        Intent mShareLinkIntent = new Intent();
-                        mShareLinkIntent.setAction(Intent.ACTION_SEND);
-                        mShareLinkIntent.setType("text/plain");
-                        mShareLinkIntent.putExtra(Intent.EXTRA_TEXT, "magnet:" + link);
-                        ((MainActivity) this.context).setShareLinkIntent(mShareLinkIntent);
-                    } else
-                        ((MainActivity) this.context).setShareLinkIntent(null);
-
+                        ((MainActivity) this.context).mMangetLink = "magnet:" + link;
+                        ((MainActivity) this.context).showMagnetIcon();
+                    } else {
+                        ((MainActivity) this.context).mMangetLink = null;
+                        ((MainActivity) this.context).hideMagnetIcon();
+                    }
                     //((MainActivity) context).invalidateOptionsMenu();
 
                 }
                 return createFromString(mime, encoding, inputStream);
+            } else if (responseCode == 302) {
+                // перенаправлю на нужный адрес
+                Log.d("surprise", "ProxyProcessor getWebResourceResponse: " + headers.get("Location"));
             } else {
                 return createResponseError(responseMessage, url.toString(), String.valueOf(responseCode));
             }
@@ -287,11 +320,11 @@ public class ProxyProcessor {
         return null;
     }
 
-    public String makeError(Exception e, String url) {
+    private String makeError(Exception e, String url) {
         return makeError(e.getMessage(), url, String.valueOf(e.hashCode()));
     }
 
-    public String makeError(String errorMessage, String url, String errorCode) {
+    private String makeError(String errorMessage, String url, String errorCode) {
         Log.d(VIEW_TAG, "Url: " + url);
         Log.d(VIEW_TAG, "Response code: " + errorCode);
         Log.d(VIEW_TAG, "Response message: " + errorMessage);
@@ -303,9 +336,6 @@ public class ProxyProcessor {
                 "или <a href=\"" + Rutracker.MAIN_URL + "\">вернуться на главную</a>";
     }
 
-    private HttpResponse executeRequest(Uri url, Map<String, String> headers, UrlEncodedFormEntity params) throws IOException {
-        return executeRequest(url.toString(), headers, params);
-    }
 
     private HttpResponse executeRequest(String url, Map<String, String> headers, UrlEncodedFormEntity params) throws IOException {
         HttpClient httpClient = getNewHttpClient();
@@ -356,19 +386,39 @@ public class ProxyProcessor {
     }
 
     private WebResourceResponse createFromString(String buf) throws UnsupportedEncodingException {
-        return createFromString(buf, MIME_TEXT_HTML, ENCODING_UTF_8);
+        return createFromString(buf, ENCODING_UTF_8);
     }
 
-    private WebResourceResponse createFromString(String buf, String mime) throws UnsupportedEncodingException {
-        return createFromString(buf, mime, ENCODING_UTF_8);
-    }
-
-    private WebResourceResponse createFromString(String buf, String mime, String encoding) throws UnsupportedEncodingException {
+    private WebResourceResponse createFromString(String buf, String encoding) throws UnsupportedEncodingException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(buf.getBytes(encoding));
-        return createFromString(mime, encoding, inputStream);
+        return createFromString(ProxyProcessor.MIME_TEXT_HTML, encoding, inputStream);
     }
 
-    private WebResourceResponse createFromString(String mime, String encoding, InputStream inputStream) throws UnsupportedEncodingException {
+    private WebResourceResponse createFromString(String mime, String encoding, InputStream inputStream) {
         return new WebResourceResponse(mime, encoding, inputStream);
+    }
+
+    private void checkPageForTorrent(String data) {
+        int count = (data.length() - data.replace(DL_LINK, "").length()) / DL_LINK.length();
+        if (count == 2) {
+            // найдена ссылка на торрент, найду её
+            // определю, есть ли ссылка на скачивание торрент-файла
+            int start = data.indexOf(DL_LINK);
+            // получу ссылку полностью
+            int end = data.indexOf("\"", start);
+            String torrentUrl = data.substring(start, end);
+            // получу название страницы
+            start = data.indexOf("<title>");
+            end = data.indexOf("</title>", start);
+            String torrentName = data.substring(start + 7, end);
+            torrentName = torrentName.split("/")[0];
+            if (torrentName.length() > 100) {
+                torrentName = torrentName.substring(0, 100);
+            }
+            ((MainActivity) this.context).setDownloadTorrentActive(torrentUrl, torrentName.trim());
+        } else {
+            // скрываю значок
+            ((MainActivity) this.context).hideDownloadIcon();
+        }
     }
 }

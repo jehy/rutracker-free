@@ -41,7 +41,7 @@ public class Utils {
             MessageDigest digest = java.security.MessageDigest
                     .getInstance(MD5);
             digest.update(s.getBytes());
-            byte messageDigest[] = digest.digest();
+            byte[] messageDigest = digest.digest();
 
             // Create Hex String
             StringBuilder hexString = new StringBuilder();
@@ -147,7 +147,7 @@ public class Utils {
         return null;
     }
 
-    public static void copyFile(String inputPath, String inputFile, String outputPath) {
+     static void copyFile(String inputPath, String inputFile, String outputPath) {
 
         InputStream in = null;
         OutputStream out = null;

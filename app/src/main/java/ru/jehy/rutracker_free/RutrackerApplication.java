@@ -12,10 +12,12 @@ import com.msopentech.thali.toronionproxy.OnionProxyManager;
 public class RutrackerApplication extends Application {
     public static OnionProxyManager onionProxyManager = null;
     public String currentUrl = Rutracker.MAIN_URL;
+    private static RutrackerApplication instance;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
         final String fileStorageLocation = "torfiles";
 
         Thread initThread = new Thread() {
@@ -26,5 +28,8 @@ public class RutrackerApplication extends Application {
             }
         };
         initThread.start();
+    }
+    public static RutrackerApplication getInstance(){
+        return instance;
     }
 }

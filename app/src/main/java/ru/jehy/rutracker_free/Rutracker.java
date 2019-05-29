@@ -6,32 +6,33 @@ import android.net.Uri;
  * Created by Jehy on 17.10.2016.
  */
 
-public class Rutracker {
-    public static final String MAIN_URL = "https://rutracker.org/forum/index.php";
+ class Rutracker {
+     static final String MAIN_URL = "https://rutracker.org/forum/index.php";
+     static final String BASE_URL = "https://rutracker.org/forum/";
 
-    public static boolean isLoginForm(Uri url) {
-        return (isRutracker(url) && url.getPath().toLowerCase().contains("forum/login.php"));
+     static boolean isLoginForm(Uri url) {
+        return (isRutracker(url) && url.getPath() != null && url.getPath().toLowerCase().contains("forum/login.php"));
     }
 
 
-    public static boolean isRutracker(Uri url) {
+     static boolean isRutracker(Uri url) {
         String host = url.getHost().toLowerCase();
         return ((host.equals("rutracker.org")
                 || host.endsWith(".rutracker.org")
         ));
     }
 
-    public static boolean isRutracker(String url) {
+     static boolean isRutracker(String url) {
         return isRutracker(Uri.parse(url));
     }
 
-    public static boolean isWiki(Uri url) {
+     static boolean isWiki(Uri url) {
         String host = url.getHost().toLowerCase();
         return host.equals("rutracker.wiki") || isRutracker(url) && url.getPath().toLowerCase().startsWith("/go/");
     }
 
 
-    public static boolean isAdvertisment(Uri url) {
+     static boolean isAdvertisment(Uri url) {
         String[] advHosts = {"marketgid.com", "adriver.ru", "thisclick.network", "hghit.com",
                 "onedmp.com", "acint.net", "yadro.ru", "tovarro.com", "marketgid.com", "rtb.com", "adx1.com",
                 "directadvert.ru", "rambler.ru", "advertserve.com", "bannersvideo.com", "mc.yandex.ru"};
