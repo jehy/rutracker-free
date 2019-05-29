@@ -124,13 +124,12 @@ class ProxyProcessor {
 
             try {
                 response = executeRequest(requestUrl, headers, params);
-                Log.d("surprise", "ProxyProcessor getWebResourceResponse: response code " + response.getStatusLine().getStatusCode());
             } catch (Exception e) {
                 return createExceptionError(e, url);
             }
 
             if (url.toString().contains(DL_LINK)) {
-                // начинаю загружать книку, пошлю оповещение о начале загрузки
+                // начинаю загружать торрент, пошлю оповещение о начале загрузки
                 Intent startLoadingIntent = new Intent(MainActivity.TORRENT_LOAD_ACTION);
                 startLoadingIntent.putExtra(MainActivity.TORRENT_LOAD_EVENT, MainActivity.START_TORRENT_LOADING);
                 context.sendBroadcast(startLoadingIntent);
@@ -275,32 +274,12 @@ class ProxyProcessor {
                     data = data.replace("<a href=\"#\" onclick=\"return post2url('login.php', {logout: 1});\">Выход</a>",
                             "<a href=\"logout.php\">Выход</a>");
 
-                    if(data.contains(LOGGED_IN_MARKER)){
+                    if (data.contains(LOGGED_IN_MARKER)) {
                         ((MainActivity) this.context).hideLoginIcon();
-                    }
-                    else{
+                    } else {
                         ((MainActivity) this.context).showLoginIcon();
                     }
-
-                    // определю, есть ли ссылка на скачивание торрент-файла
-                    start = data.indexOf(DL_LINK);
-                    if (start != -1) {
-                        // получу ссылку полностью
-                        end = data.indexOf("\"", start);
-                        String torrentUrl = data.substring(start, end);
-                        // получу название страницы
-                        start = data.indexOf("<title>");
-                        end = data.indexOf("</title>", start);
-                        String torrentName = data.substring(start + 7, end);
-                        torrentName = torrentName.split("/")[0];
-                        if (torrentName.length() > 100) {
-                            torrentName = torrentName.substring(0, 100);
-                        }
-                        ((MainActivity) this.context).setDownloadTorrentActive(torrentUrl, torrentName.trim());
-                    } else {
-                        // скрываю значок
-                        ((MainActivity) this.context).hideDownloadIcon();
-                    }
+                    checkPageForTorrent(data);
 
                     inputStream = new ByteArrayInputStream(data.getBytes(encoding));
                     //Log.d(VIEW_TAG, "data " + data);
@@ -320,8 +299,7 @@ class ProxyProcessor {
                     if (link.length() > 0) {
                         ((MainActivity) this.context).mMangetLink = "magnet:" + link;
                         ((MainActivity) this.context).showMagnetIcon();
-                    }
-                    else{
+                    } else {
                         ((MainActivity) this.context).mMangetLink = null;
                         ((MainActivity) this.context).hideMagnetIcon();
                     }
@@ -329,12 +307,10 @@ class ProxyProcessor {
 
                 }
                 return createFromString(mime, encoding, inputStream);
-            }
-            else if(responseCode == 302){
+            } else if (responseCode == 302) {
                 // перенаправлю на нужный адрес
                 Log.d("surprise", "ProxyProcessor getWebResourceResponse: " + headers.get("Location"));
-            }
-            else {
+            } else {
                 return createResponseError(responseMessage, url.toString(), String.valueOf(responseCode));
             }
         } catch (Exception e) {
@@ -420,5 +396,29 @@ class ProxyProcessor {
 
     private WebResourceResponse createFromString(String mime, String encoding, InputStream inputStream) {
         return new WebResourceResponse(mime, encoding, inputStream);
+    }
+
+    private void checkPageForTorrent(String data) {
+        int count = (data.length() - data.replace(DL_LINK, "").length()) / DL_LINK.length();
+        if (count == 2) {
+            // найдена ссылка на торрент, найду её
+            // определю, есть ли ссылка на скачивание торрент-файла
+            int start = data.indexOf(DL_LINK);
+            // получу ссылку полностью
+            int end = data.indexOf("\"", start);
+            String torrentUrl = data.substring(start, end);
+            // получу название страницы
+            start = data.indexOf("<title>");
+            end = data.indexOf("</title>", start);
+            String torrentName = data.substring(start + 7, end);
+            torrentName = torrentName.split("/")[0];
+            if (torrentName.length() > 100) {
+                torrentName = torrentName.substring(0, 100);
+            }
+            ((MainActivity) this.context).setDownloadTorrentActive(torrentUrl, torrentName.trim());
+        } else {
+            // скрываю значок
+            ((MainActivity) this.context).hideDownloadIcon();
+        }
     }
 }

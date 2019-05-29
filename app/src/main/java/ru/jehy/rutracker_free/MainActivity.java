@@ -73,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private TorrentLoadingReceiver mTorrentLoadReceiver;
     private boolean mShowLoginIcon;
     private SearchView mSearchView;
+    private boolean mIsTorrentDownloadRequired;
+    private Menu mMenu;
 
 
     @Override
@@ -192,6 +194,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                     Log.v(TAG, "PERMISSION_SAVE_FILE granted");
+                    if(mIsTorrentDownloadRequired){
+                        downloadTorrent();
+                    }
                     this.shareFile(this.sharingFileName);
 
                 } else {
@@ -206,6 +211,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        mMenu = menu;
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.actionbar, menu);
         menu.findItem(R.id.menu_item_download).setVisible(mShowDownloadIcon);
@@ -293,6 +299,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     private void shareCurrentPage() {
         String shareMsg = "Посмотри, что я нашёл на рутрекере при помощи приложения rutracker free: \n" + RutrackerApplication.getInstance().currentUrl;
+        if(mMangetLink != null){
+            shareMsg += " \n\n Magnet ссылка на скачивание:\n " + mMangetLink;
+        }
         Intent mShareIntent = new Intent();
         mShareIntent.setAction(Intent.ACTION_SEND);
         mShareIntent.setType("text/plain");
@@ -431,6 +440,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 Log.w(TAG, "no permission to write external storage, requesting");
                 String[] require = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
                 MainActivity.this.requestPermissions(require, PERMISSION_SAVE_FILE);
+                // установлю флаг, который покажет, что нужно повторно скачать торрент после получения прав
+                mIsTorrentDownloadRequired = true;
                 return;
             }
         }
@@ -492,13 +503,19 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     public boolean onQueryTextSubmit(String s) {
-        mSearchView.setIconified(true);
         invalidateOptionsMenu();
         Log.d("surprise", "MainActivity onQueryTextSubmit: make search");
         try {
             String url = "https://rutracker.org/forum/tracker.php?convert_post=1" + "&nm=" + URLEncoder.encode(s, "windows-1251");
             mWebView.loadUrl(url);
-
+            mSearchView.setIconified(true);
+            mSearchView.clearFocus();
+            // call your request, do some stuff..
+            // collapse the action view
+            if (mMenu != null) {
+                Log.d("surprise", "MainActivity onQueryTextSubmit: hiding search");
+                (mMenu.findItem(R.id.action_search)).collapseActionView();
+            }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
